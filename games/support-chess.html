@@ -126,68 +126,62 @@
     align-items:center;
     justify-content:center;
   }
-  #logBox{
-    width:100%;
-    max-width:480px;
-    background:#2a2a2a;
-    border-radius:8px;
-    padding:8px 12px;
-    font-size:11px;
-    color:#999;
-    font-family:monospace;
-    white-space:pre-wrap;
-    min-height:18px;
+  /* 기보 (해적체스/강급체스와 동일한 공용 스타일) */
+  #log-box{
+    margin-top:10px;
+    background:#12122a; border:1px solid #444;
+    border-radius:6px; padding:8px 12px;
+    width:100%; max-width:720px;
+    max-height:80px; overflow-y:auto;
   }
-  #pieceModal{
-    position:fixed;
-    top:0;left:0;right:0;bottom:0;
-    background:rgba(0,0,0,0.6);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:60;
+  #log{ font-size:11px; color:#888; font-family:monospace; white-space:pre-wrap; }
+
+  /* 기물 행마 안내 모달 (4개 게임 공용 스타일) */
+  #piece-modal{
+    display:none; position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.75);
+    align-items:center; justify-content:center; z-index:100;
   }
-  #pieceModal.show{display:flex;}
-  #pieceModalBox{
-    background:#2a2a2a;
-    border-radius:10px;
-    padding:18px;
-    max-width:520px;
-    max-height:80vh;
-    overflow-y:auto;
-    position:relative;
+  #piece-modal.show{ display:flex; }
+  #piece-modal-box{
+    background:#1a1a2e; border:2px solid #d4a843;
+    border-radius:10px; padding:20px; width:520px; max-height:90vh;
+    overflow-y:auto; position:relative;
   }
-  #pieceModalBox h3{color:#f2c744; font-size:15px; margin:0 0 12px; text-align:center;}
-  #pieceClose{
-    position:absolute; top:10px; right:10px;
-    width:28px; height:28px; padding:0;
-    border-radius:6px;
-  }
-  #pieceTabs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; justify-content:center;}
+  #piece-modal-box h3{ color:#d4a843; font-size:15px; margin-bottom:12px; text-align:center; }
+  #piece-tabs{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; }
   .ptab{
-    padding:6px 10px;
-    border-radius:6px;
-    border:1px solid #555;
-    background:#333;
-    color:#eee;
-    cursor:pointer;
-    font-size:12px;
+    background:#2a2a4a; color:#aaa; border:1px solid #444;
+    padding:4px 9px; cursor:pointer; font-size:11px; border-radius:4px;
+    width:auto;
   }
-  .ptab.active{background:#3a3a6a; color:#f2c744; border-color:#f2c744;}
-  #pieceContent{display:flex; flex-wrap:wrap; gap:14px; justify-content:center;}
-  .terrain-section{flex:1; min-width:180px;}
-  .terrain-section h5{font-size:11px; color:#f2c744; margin:0 0 6px; text-align:center;}
-  .mini-board{display:grid; gap:1px; background:#111; margin:0 auto;}
-  .mc{width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:15px; background:#3a3a3a;}
-  .mc.piece-cell{background:#9a8010 !important;}
-  .mc.mv{background:#2a6a2a !important;}
-  .mc.cap{background:#7a2020 !important;}
-  .mc.mv-cap{background:#7a5500 !important;}
-  .mc.cond{background:#4a4a9a !important;}
-  .legend-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
-  .leg{display:flex; align-items:center; gap:3px; font-size:10px; color:#aaa;}
-  .leg-box{width:12px; height:12px; border-radius:2px;}
-  .pawn-note{font-size:11px; color:#bbb; margin-top:10px; line-height:1.5; text-align:left; max-width:460px;}
+  .ptab.active{ background:#3a3a6a; color:#d4a843; border-color:#d4a843; }
+  .ptab:hover{ background:#3a3a5a; }
+  #piece-content{ display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; }
+  .terrain-section{ flex:1; min-width:160px; }
+  .terrain-section h5{ font-size:11px; color:#d4a843; margin-bottom:6px; text-align:center; }
+  .mini-board{
+    display:grid; gap:1px; background:#333; border:1px solid #555;
+    width:fit-content; margin:0 auto 6px auto;
+  }
+  .mc{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .mc.chk-l{ background:#1e4a7a; }
+  .mc.chk-d{ background:#163860; }
+  .mc.mv{ background:#4a7a10 !important; }
+  .mc.cap{ background:#7a2020 !important; }
+  .mc.mv-cap{ background:#7a5500 !important; }
+  .mc.piece-cell{ background:#9a8010 !important; }
+  .mc.ally{ background:#2a5a9a !important; }
+  .piece-desc{ font-size:10px; color:#999; line-height:1.6; margin-top:4px; }
+  .legend-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .leg{ display:flex; align-items:center; gap:3px; font-size:10px; color:#aaa; }
+  .leg-box{ width:12px; height:12px; border-radius:2px; }
+  #piece-close{
+    position:absolute; top:10px; right:14px;
+    background:none; border:none; color:#888; font-size:18px; cursor:pointer; width:auto;
+  }
+  #piece-close:hover{ color:#d4a843; }
 </style>
 </head>
 <body>
@@ -233,14 +227,14 @@
   </div>
 </div>
 
-<div id="logBox"></div>
+<div id="log-box"><div id="log"></div></div>
 
-<div id="pieceModal">
-  <div id="pieceModalBox">
-    <button id="pieceClose">✕</button>
+<div id="piece-modal">
+  <div id="piece-modal-box">
+    <button id="piece-close">✕</button>
     <h3>기물 행마 안내</h3>
-    <div id="pieceTabs"></div>
-    <div id="pieceContent"></div>
+    <div id="piece-tabs"></div>
+    <div id="piece-content"></div>
   </div>
 </div>
 
@@ -674,7 +668,7 @@ function logMove(from, to, pieceType, color, capture){
 }
 
 function renderLog(){
-  const el = document.getElementById('logBox');
+  const el = document.getElementById('log');
   el.textContent = moveLog.map(m => m.n + '.' + (m.w||'...') + (m.b ? ' '+m.b : '')).join('  ');
 }
 
@@ -952,7 +946,7 @@ document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
 document.getElementById('resetBtn').onclick = resetGame;
 document.getElementById('undoBtn').onclick = undoMove;
 document.getElementById('rulesBtn').onclick = openPieceModal;
-document.getElementById('pieceClose').onclick = closePieceModal;
+document.getElementById('piece-close').onclick = closePieceModal;
 
 buildBoardDom();
 render();
@@ -986,7 +980,7 @@ const PIECE_MODAL_DATA = {
         return g;
       })(),
       desc:'8방향 1칸: 이동 전용(만). 나이트(L자) 8방향: 이동+캡처.',
-      legends:[['mv','#2a6a2a','이동 전용'],['mv-cap','#7a5500','이동+캡처']]
+      legends:[['mv','#4a7a10','이동 전용'],['mv-cap','#7a5500','이동+캡처']]
     }]
   },
   R: {
@@ -1000,7 +994,7 @@ const PIECE_MODAL_DATA = {
         return g;
       })(),
       desc:'나이트(L자) 8방향: 이동 전용. 직선 4방향 무제한: 캡처 전용.',
-      legends:[['mv','#2a6a2a','이동 전용'],['cap','#7a2020','캡처 전용']]
+      legends:[['mv','#4a7a10','이동 전용'],['cap','#7a2020','캡처 전용']]
     }]
   },
   Q: {
@@ -1018,7 +1012,7 @@ const PIECE_MODAL_DATA = {
         return g;
       })(),
       desc:'직선+대각 8방향 무제한: 이동 전용. 8방향 1칸: 캡처 전용.',
-      legends:[['mv','#2a6a2a','이동 전용'],['cap','#7a2020','캡처 전용']]
+      legends:[['mv','#4a7a10','이동 전용'],['cap','#7a2020','캡처 전용']]
     }]
   },
   B: {
@@ -1051,27 +1045,62 @@ const PIECE_MODAL_DATA = {
   },
   P: {
     name: '폰', icon:'♙',
-    boards: [{
-      label:'기본 + 지원 시 추가 이동 (종합)',
-      grid: (() => {
-        const g = makeGrid(5); g[2][2]='piece-cell';
-        g[1][2]='mv';
-        g[1][1]='cap'; g[1][3]='cap';
-        g[0][1]='cond'; g[0][2]='cond'; g[0][3]='cond';
-        g[1][0]='cond'; g[1][4]='cond';
-        g[2][0]='cond'; g[2][1]='cond'; g[2][3]='cond'; g[2][4]='cond';
-        g[3][0]='cond'; g[3][2]='cond'; g[3][4]='cond';
-        g[4][2]='cond';
-        return g;
-      })(),
-      desc:'정면 1칸: 이동 전용. 대각 앞 2방향: 캡처 전용(단, 반대편 대각 뒤에 아군 폰이 있으면 그 방향은 이동도 가능).',
-      legends:[['mv','#2a6a2a','이동 전용'],['cap','#7a2020','캡처 전용'],['cond','#4a4a9a','조건부 추가 이동(아래 설명 참고)']]
-    }],
-    note:[
-      '전방에 아군 폰이 있으면: 그 폰을 뛰어넘는 나이트 벡터 2칸(전진축2/측면축1) 이동 전용.',
-      '측면(좌/우)에 아군 폰이 있으면: 그 폰을 뛰어넘는 나이트 벡터 2칸(측면축2/전진축1) 이동 전용.',
-      '바로 뒤(같은 파일)에 아군 폰이 있으면: 정면 1칸이 비어있을 때 정면 2칸째까지 이동 전용.',
-      '앞/뒤/좌/우 중 아군 장수(룩·나이트·퀸·킹)가 인접하면: 그 반대 방향으로 1·2칸 슬라이드 이동(뒤쪽 지원은 이동+캡처 포함).'
+    boards: [
+      {
+        label:'기본',
+        grid: (() => {
+          const g = makeGrid(5); g[2][2]='piece-cell';
+          g[1][2]='mv';
+          g[1][1]='cap'; g[1][3]='cap';
+          return g;
+        })(),
+        desc:'정면 1칸: 이동 전용. 대각 앞 2방향: 캡처 전용.',
+        legends:[['mv','#4a7a10','이동 전용'],['cap','#7a2020','캡처 전용']]
+      },
+      {
+        label:'전방에 아군 폰이 있으면',
+        grid: (() => {
+          const g = makeGrid(5); g[2][2]='piece-cell';
+          g[1][2]='ally';
+          g[0][1]='mv'; g[0][3]='mv';
+          return g;
+        })(),
+        desc:'바로 앞의 아군 폰을 뛰어넘는 나이트 벡터 2칸(전진축2/측면축1)으로 이동(이동 전용).',
+        legends:[['ally','#2a5a9a','아군 폰'],['mv','#4a7a10','이동 전용']]
+      },
+      {
+        label:'측면(좌/우)에 아군 폰이 있으면',
+        grid: (() => {
+          const g = makeGrid(5); g[2][2]='piece-cell';
+          g[2][1]='ally';
+          g[1][0]='mv'; g[3][0]='mv';
+          return g;
+        })(),
+        desc:'측면 아군 폰을 뛰어넘는 나이트 벡터 2칸(측면축2/전진축1)으로 이동(이동 전용). 반대편에 있을 때도 좌우 대칭으로 동일하게 적용.',
+        legends:[['ally','#2a5a9a','아군 폰'],['mv','#4a7a10','이동 전용']]
+      },
+      {
+        label:'바로 뒤(같은 파일)에 아군 폰이 있으면',
+        grid: (() => {
+          const g = makeGrid(5); g[2][2]='piece-cell';
+          g[3][2]='ally';
+          g[0][2]='mv';
+          return g;
+        })(),
+        desc:'정면 1칸이 비어있을 때 정면 2칸째까지 이동 가능(이동 전용).',
+        legends:[['ally','#2a5a9a','아군 폰'],['mv','#4a7a10','이동 전용']]
+      },
+      {
+        label:'장수(룩·나이트·퀸·킹)가 인접하면',
+        grid: (() => {
+          const g = makeGrid(5); g[2][2]='piece-cell';
+          g[2][1]='gen';
+          g[2][3]='mv'; g[2][4]='mv';
+          return g;
+        })(),
+        desc:'인접한 방향의 반대쪽으로 1·2칸 슬라이드 이동(그림은 왼쪽에 장수가 있어 오른쪽으로 슬라이드하는 예시). 앞/뒤/좌/우 어느 쪽에 있어도 반대 방향에 동일하게 적용되며, 뒤쪽에 장수가 있는 경우엔 그 슬라이드에 캡처도 포함된다.',
+        legends:[['gen','#2a5a9a','아군 장수'],['mv','#4a7a10','이동 전용']]
+      }
     ]
   }
 };
@@ -1080,16 +1109,16 @@ const PIECE_ORDER = ['P','N','R','B','Q','K'];
 let activePieceTab = 'P';
 
 function openPieceModal(){
-  document.getElementById('pieceModal').classList.add('show');
+  document.getElementById('piece-modal').classList.add('show');
   renderPieceTabs();
   renderPieceContent(activePieceTab);
 }
 function closePieceModal(){
-  document.getElementById('pieceModal').classList.remove('show');
+  document.getElementById('piece-modal').classList.remove('show');
 }
 
 function renderPieceTabs(){
-  const tabs = document.getElementById('pieceTabs');
+  const tabs = document.getElementById('piece-tabs');
   tabs.innerHTML = '';
   for(const key of PIECE_ORDER){
     const btn = document.createElement('button');
@@ -1102,12 +1131,14 @@ function renderPieceTabs(){
 
 function renderPieceContent(key){
   const data = PIECE_MODAL_DATA[key];
-  const cont = document.getElementById('pieceContent');
+  const cont = document.getElementById('piece-content');
   cont.innerHTML = '';
+  cont.style.flexWrap = 'wrap';
 
   for(const b of data.boards){
     const sec = document.createElement('div');
     sec.className = 'terrain-section';
+    sec.style.marginBottom = '10px';
 
     const h5 = document.createElement('h5');
     h5.textContent = b.label;
@@ -1117,16 +1148,27 @@ function renderPieceContent(key){
     const size = grid.length;
     const mb = document.createElement('div');
     mb.className = 'mini-board';
-    mb.style.gridTemplateColumns = `repeat(${size}, 30px)`;
-    mb.style.gridTemplateRows = `repeat(${size}, 30px)`;
+    mb.style.gridTemplateColumns = `repeat(${size}, 32px)`;
+    mb.style.gridTemplateRows = `repeat(${size}, 32px)`;
 
     for(let r=0;r<size;r++){
       for(let c=0;c<size;c++){
         const cell = document.createElement('div');
-        cell.className = 'mc';
+        const isL = (r+c)%2===0;
+        cell.className = 'mc ' + (isL?'chk-l':'chk-d');
         const sp = grid[r][c];
-        if(sp) cell.classList.add(sp);
-        if(sp==='piece-cell') cell.textContent = data.icon;
+        if(sp==='gen'){
+          cell.classList.add('ally');
+          cell.textContent = '♜';
+        } else if(sp==='ally'){
+          cell.classList.add('ally');
+          cell.textContent = data.icon;
+        } else if(sp==='piece-cell'){
+          cell.classList.add('piece-cell');
+          cell.textContent = data.icon;
+        } else if(sp){
+          cell.classList.add(sp);
+        }
         mb.appendChild(cell);
       }
     }
@@ -1138,14 +1180,13 @@ function renderPieceContent(key){
       leg.innerHTML += `<div class="leg"><div class="leg-box" style="background:${color}"></div>${lbl}</div>`;
     }
     sec.appendChild(leg);
-    cont.appendChild(sec);
-  }
 
-  if(data.note){
-    const note = document.createElement('div');
-    note.className = 'pawn-note';
-    note.innerHTML = data.note.map((line,i) => `${i+1}. ${line}`).join('<br>');
-    cont.appendChild(note);
+    const desc = document.createElement('div');
+    desc.className = 'piece-desc';
+    desc.textContent = b.desc;
+    sec.appendChild(desc);
+
+    cont.appendChild(sec);
   }
 }
 </script>
