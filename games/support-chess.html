@@ -4,14 +4,36 @@
 <meta charset="UTF-8">
 <title>10x10 변형 체스</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=Crimson+Text:ital,wght@0,400;0,600&display=swap');
+  /* 실제 보드 색은 테마와 무관하게 항상 고정 */
   :root{
     --light-sq:#eeeed2;
     --dark-sq:#769656;
   }
+  /* 전역 테마 토큰 — 심플(기본) */
+  :root, html[data-theme="simple"]{
+    --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
+    --accent:#9ccc65; --accent-border:#8fbc5a;
+    --btn-bg:#333; --btn-border:#555; --btn-accent-bg:#3a4d2a;
+    --tab-inactive-bg:#333; --tab-inactive-border:#4d4d4d; --tab-inactive-text:#999;
+    --modal-bg:#1e1e1e; --modal-border:#8fbc5a;
+    --log-bg:#2a2a2a; --log-border:#444; --log-text:#999;
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  /* 전역 테마 토큰 — 브라운 */
+  html[data-theme="brown"]{
+    --bg:#1c0e05; --panel-bg:#2a1508; --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
+    --accent:#c9a84c; --accent-border:#c9a84c;
+    --btn-bg:transparent; --btn-border:#5a3a18; --btn-accent-bg:rgba(201,168,76,.18);
+    --tab-inactive-bg:transparent; --tab-inactive-border:#5a3a18; --tab-inactive-text:#806040;
+    --modal-bg:#1c0e05; --modal-border:#c9a84c;
+    --log-bg:rgba(255,255,255,.03); --log-border:#3a2010; --log-text:#a08060;
+    --font-family:'Crimson Text', Georgia, serif;
+  }
   body{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background:#1e1e1e;
-    color:#eee;
+    font-family: var(--font-family);
+    background:var(--bg);
+    color:var(--text);
     margin:0;
     padding:24px;
     display:flex;
@@ -20,11 +42,16 @@
     gap:16px;
   }
   h1{font-size:18px; font-weight:500; margin:0;}
+  #theme-toggle{ display:flex; gap:4px; }
+  #theme-toggle button{
+    flex:1; font-size:11px; padding:6px 4px;
+  }
+  #theme-toggle button.active{ background:var(--btn-accent-bg); border-color:var(--accent-border); color:var(--accent); }
   #status{
     font-size:15px;
     padding:8px 16px;
     border-radius:8px;
-    background:#2a2a2a;
+    background:var(--panel-bg);
     min-height:20px;
   }
   #status.check{color:#ffb84d;}
@@ -76,11 +103,12 @@
     gap:14px;
   }
   .panel{
-    background:#2a2a2a;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
     border-radius:8px;
     padding:10px;
   }
-  .panel h3{margin:0 0 8px 0; font-size:12px; color:#aaa; font-weight:500;}
+  .panel h3{margin:0 0 8px 0; font-size:12px; color:var(--text-dim); font-weight:500;}
   .captured-row{
     display:flex;
     flex-wrap:wrap;
@@ -91,13 +119,14 @@
   button{
     padding:8px 14px;
     border-radius:6px;
-    border:1px solid #555;
-    background:#333;
-    color:#eee;
+    border:1px solid var(--btn-border);
+    background:var(--btn-bg);
+    color:var(--text);
     cursor:pointer;
     font-size:13px;
+    font-family:var(--font-family);
   }
-  button:hover{background:#444;}
+  button:hover{background:var(--btn-accent-bg);}
   #promoModal{
     position:fixed;
     top:0;left:0;right:0;bottom:0;
@@ -109,7 +138,8 @@
   }
   #promoModal.show{display:flex;}
   #promoBox{
-    background:#2a2a2a;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
     border-radius:10px;
     padding:20px;
     display:flex;
@@ -126,15 +156,15 @@
     align-items:center;
     justify-content:center;
   }
-  /* 기보 (해적체스/강급체스와 동일한 공용 스타일) */
+  /* 기보 (4개 게임 공용 스타일) */
   #log-box{
     margin-top:10px;
-    background:#12122a; border:1px solid #444;
+    background:var(--log-bg); border:1px solid var(--log-border);
     border-radius:6px; padding:8px 12px;
     width:100%; max-width:720px;
     max-height:80px; overflow-y:auto;
   }
-  #log{ font-size:11px; color:#888; font-family:monospace; white-space:pre-wrap; }
+  #log{ font-size:11px; color:var(--log-text); font-family:monospace; white-space:pre-wrap; }
 
   /* 기물 행마 안내 모달 (4개 게임 공용 스타일) */
   #piece-modal{
@@ -145,48 +175,57 @@
   }
   #piece-modal.show{ display:flex; }
   #piece-modal-box{
-    background:#1a1a2e; border:2px solid #d4a843;
+    background:var(--modal-bg); border:2px solid var(--modal-border);
     border-radius:10px; padding:20px; width:520px; max-height:90vh;
     overflow-y:auto; position:relative;
   }
-  #piece-modal-box h3{ color:#d4a843; font-size:15px; margin-bottom:12px; text-align:center; }
+  #piece-modal-box h3{ color:var(--accent); font-size:15px; margin-bottom:12px; text-align:center; }
   #piece-tabs{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; }
   .ptab{
-    background:#2a2a4a; color:#aaa; border:1px solid #444;
+    background:var(--tab-inactive-bg); color:var(--tab-inactive-text); border:1px solid var(--tab-inactive-border);
     padding:4px 9px; cursor:pointer; font-size:11px; border-radius:4px;
-    width:auto;
+    width:auto; font-family:var(--font-family);
   }
-  .ptab.active{ background:#3a3a6a; color:#d4a843; border-color:#d4a843; }
-  .ptab:hover{ background:#3a3a5a; }
+  .ptab.active{ background:var(--btn-accent-bg); color:var(--accent); border-color:var(--accent-border); }
+  .ptab:hover{ filter:brightness(1.2); }
   #piece-content{ display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; }
   .terrain-section{ flex:1; min-width:160px; }
-  .terrain-section h5{ font-size:11px; color:#d4a843; margin-bottom:6px; text-align:center; }
+  .terrain-section h5{ font-size:11px; color:var(--accent); margin-bottom:6px; text-align:center; }
   .mini-board{
-    display:grid; gap:1px; background:#333; border:1px solid #555;
+    display:grid; gap:1px; background:#111; border:1px solid var(--border);
     width:fit-content; margin:0 auto 6px auto;
   }
-  .mc{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px; }
-  .mc.chk-l{ background:#1e4a7a; }
-  .mc.chk-d{ background:#163860; }
-  .mc.mv{ background:#4a7a10 !important; }
-  .mc.cap{ background:#7a2020 !important; }
-  .mc.mv-cap{ background:#7a5500 !important; }
+  .mc{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px; position:relative; }
+  /* 보드 실제 색과 동일한 체커 — 테마와 무관하게 고정 */
+  .mc.chk-l{ background:var(--light-sq); }
+  .mc.chk-d{ background:var(--dark-sq); }
   .mc.piece-cell{ background:#9a8010 !important; }
   .mc.ally{ background:#2a5a9a !important; }
-  .piece-desc{ font-size:10px; color:#999; line-height:1.6; margin-top:4px; }
+  /* 이동/캡처 표기 — 색은 테마와 무관하게 고정: 이동=파랑, 캡처=빨강, 이동+캡처=보라 */
+  .mc .dot, .leg-box .dot{ position:absolute; top:50%; left:50%; border-radius:50%; transform:translate(-50%,-50%); }
+  .mc .dot{ width:16px; height:16px; z-index:1; }
+  .leg-box .dot{ width:11px; height:11px; }
+  .dot.mv{ background:rgba(58,120,246,.85); }
+  .dot.cap{ background:rgba(230,60,60,.85); }
+  .dot.mvcap{ background:rgba(155,89,182,.9); }
+  .piece-desc{ font-size:10px; color:var(--text-dim); line-height:1.6; margin-top:4px; }
   .legend-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-  .leg{ display:flex; align-items:center; gap:3px; font-size:10px; color:#aaa; }
-  .leg-box{ width:12px; height:12px; border-radius:2px; }
+  .leg{ display:flex; align-items:center; gap:3px; font-size:10px; color:var(--text-dim); }
+  .leg-box{ width:12px; height:12px; border-radius:2px; position:relative; background:rgba(255,255,255,.08); }
   #piece-close{
     position:absolute; top:10px; right:14px;
-    background:none; border:none; color:#888; font-size:18px; cursor:pointer; width:auto;
+    background:none; border:none; color:var(--text-dim); font-size:18px; cursor:pointer; width:auto;
   }
-  #piece-close:hover{ color:#d4a843; }
+  #piece-close:hover{ color:var(--accent); }
 </style>
 </head>
 <body>
 
 <h1>10×10 변형 체스 (수동 대국)</h1>
+<div id="theme-toggle">
+  <button data-theme-btn="simple">심플</button>
+  <button data-theme-btn="brown">브라운</button>
+</div>
 <div id="status">백 차례</div>
 
 <div class="main">
@@ -952,6 +991,23 @@ buildBoardDom();
 render();
 renderLog();
 
+// ===== 전역 테마 (심플/브라운, localStorage로 게임 간 공유) =====
+const THEME_KEY = 'newchess-theme';
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelectorAll('#theme-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.themeBtn === t);
+  });
+}
+applyTheme(localStorage.getItem(THEME_KEY) || 'simple');
+document.querySelectorAll('#theme-toggle button').forEach(btn => {
+  btn.onclick = () => {
+    const t = btn.dataset.themeBtn;
+    localStorage.setItem(THEME_KEY, t);
+    applyTheme(t);
+  };
+});
+
 // ===== 기물 행마 설명 모달 =====
 function makeGrid(size){ return Array.from({length:size}, () => Array(size).fill(null)); }
 
@@ -1166,6 +1222,10 @@ function renderPieceContent(key){
         } else if(sp==='piece-cell'){
           cell.classList.add('piece-cell');
           cell.textContent = data.icon;
+        } else if(sp==='mv' || sp==='cap' || sp==='mv-cap'){
+          const dot = document.createElement('span');
+          dot.className = 'dot ' + (sp==='mv-cap' ? 'mvcap' : sp);
+          cell.appendChild(dot);
         } else if(sp){
           cell.classList.add(sp);
         }
@@ -1177,7 +1237,12 @@ function renderPieceContent(key){
     const leg = document.createElement('div');
     leg.className = 'legend-row';
     for(const [cls, color, lbl] of b.legends){
-      leg.innerHTML += `<div class="leg"><div class="leg-box" style="background:${color}"></div>${lbl}</div>`;
+      if(cls==='mv' || cls==='cap' || cls==='mv-cap'){
+        const dotClass = cls==='mv-cap' ? 'mvcap' : cls;
+        leg.innerHTML += `<div class="leg"><span class="leg-box"><span class="dot ${dotClass}"></span></span>${lbl}</div>`;
+      } else {
+        leg.innerHTML += `<div class="leg"><span class="leg-box" style="background:${color}"></span>${lbl}</div>`;
+      }
     }
     sec.appendChild(leg);
 
