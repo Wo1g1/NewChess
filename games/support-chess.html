@@ -126,6 +126,68 @@
     align-items:center;
     justify-content:center;
   }
+  #logBox{
+    width:100%;
+    max-width:480px;
+    background:#2a2a2a;
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:11px;
+    color:#999;
+    font-family:monospace;
+    white-space:pre-wrap;
+    min-height:18px;
+  }
+  #pieceModal{
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:60;
+  }
+  #pieceModal.show{display:flex;}
+  #pieceModalBox{
+    background:#2a2a2a;
+    border-radius:10px;
+    padding:18px;
+    max-width:520px;
+    max-height:80vh;
+    overflow-y:auto;
+    position:relative;
+  }
+  #pieceModalBox h3{color:#f2c744; font-size:15px; margin:0 0 12px; text-align:center;}
+  #pieceClose{
+    position:absolute; top:10px; right:10px;
+    width:28px; height:28px; padding:0;
+    border-radius:6px;
+  }
+  #pieceTabs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; justify-content:center;}
+  .ptab{
+    padding:6px 10px;
+    border-radius:6px;
+    border:1px solid #555;
+    background:#333;
+    color:#eee;
+    cursor:pointer;
+    font-size:12px;
+  }
+  .ptab.active{background:#3a3a6a; color:#f2c744; border-color:#f2c744;}
+  #pieceContent{display:flex; flex-wrap:wrap; gap:14px; justify-content:center;}
+  .terrain-section{flex:1; min-width:180px;}
+  .terrain-section h5{font-size:11px; color:#f2c744; margin:0 0 6px; text-align:center;}
+  .mini-board{display:grid; gap:1px; background:#111; margin:0 auto;}
+  .mc{width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:15px; background:#3a3a3a;}
+  .mc.piece-cell{background:#9a8010 !important;}
+  .mc.mv{background:#2a6a2a !important;}
+  .mc.cap{background:#7a2020 !important;}
+  .mc.mv-cap{background:#7a5500 !important;}
+  .mc.cond{background:#4a4a9a !important;}
+  .legend-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .leg{display:flex; align-items:center; gap:3px; font-size:10px; color:#aaa;}
+  .leg-box{width:12px; height:12px; border-radius:2px;}
+  .pawn-note{font-size:11px; color:#bbb; margin-top:10px; line-height:1.5; text-align:left; max-width:460px;}
 </style>
 </head>
 <body>
@@ -141,6 +203,7 @@
     </div>
     <button id="resetBtn">새 게임</button>
     <button id="undoBtn">되돌리기</button>
+    <button id="rulesBtn">기물 행마 보기</button>
     <div class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -167,6 +230,17 @@
       <h3>백에게 잡힌 흑 기물</h3>
       <div class="captured-row" id="capBlack"></div>
     </div>
+  </div>
+</div>
+
+<div id="logBox"></div>
+
+<div id="pieceModal">
+  <div id="pieceModalBox">
+    <button id="pieceClose">✕</button>
+    <h3>기물 행마 안내</h3>
+    <div id="pieceTabs"></div>
+    <div id="pieceContent"></div>
   </div>
 </div>
 
@@ -573,6 +647,8 @@ let pendingPromotion = null;
 let history = [];
 let aiEnabled = { w:false, b:false };
 let aiThinking = false;
+let moveCount = 1;
+let moveLog = [];
 
 function colLabel(c){
   let s=''; c+=1;
@@ -580,9 +656,33 @@ function colLabel(c){
   return s;
 }
 
+function sqLabel(r,c){ return colLabel(c) + (ROWS-r); }
+
+function logMove(from, to, pieceType, color, capture){
+  const mv = (pieceType==='P' ? '' : pieceType) + sqLabel(from[0],from[1]) + (capture?'x':'') + sqLabel(to[0],to[1]);
+  if(color==='w'){
+    moveLog.push({ n:moveCount, w:mv, b:null });
+  } else {
+    if(moveLog.length>0 && moveLog[moveLog.length-1].b===null){
+      moveLog[moveLog.length-1].b = mv;
+    } else {
+      moveLog.push({ n:moveCount, w:null, b:mv });
+    }
+    moveCount++;
+  }
+  renderLog();
+}
+
+function renderLog(){
+  const el = document.getElementById('logBox');
+  el.textContent = moveLog.map(m => m.n + '.' + (m.w||'...') + (m.b ? ' '+m.b : '')).join('  ');
+}
+
+const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수
+
 function buildBoardDom(){
   const wrap = document.getElementById('boardWrap');
-  const cellSize = 44;
+  const cellSize = Math.floor(BOARD_FRAME_PX / COLS);
   const labelSize = 20;
   wrap.style.gridTemplateColumns = `${labelSize}px repeat(${COLS}, ${cellSize}px)`;
   wrap.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px) ${labelSize}px`;
@@ -695,7 +795,9 @@ function snapshotState(){
     capturedByBlack: [...capturedByBlack],
     gameOver,
     statusMessage,
-    checkColor
+    checkColor,
+    moveCount,
+    moveLog: moveLog.map(m => ({...m}))
   };
 }
 
@@ -710,6 +812,8 @@ function makeMove(from, to, autoPromoteType=null){
     if(captured.color==='w') capturedByBlack.push(captured.type);
     else capturedByWhite.push(captured.type);
   }
+
+  logMove(from, to, moving.type, moving.color, !!captured);
 
   board[tr][tc] = moving;
   board[fr][fc] = null;
@@ -785,8 +889,11 @@ function undoMove(){
   gameOver = prev.gameOver;
   statusMessage = prev.statusMessage;
   checkColor = prev.checkColor;
+  moveCount = prev.moveCount;
+  moveLog = prev.moveLog;
   selected = null;
   legalDestinations = [];
+  renderLog();
   render();
 }
 
@@ -802,6 +909,9 @@ function resetGame(){
   statusMessage = '백 차례';
   history = [];
   aiThinking = false;
+  moveCount = 1;
+  moveLog = [];
+  renderLog();
   render();
   maybeTriggerAI();
 }
@@ -841,9 +951,203 @@ document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
 
 document.getElementById('resetBtn').onclick = resetGame;
 document.getElementById('undoBtn').onclick = undoMove;
+document.getElementById('rulesBtn').onclick = openPieceModal;
+document.getElementById('pieceClose').onclick = closePieceModal;
 
 buildBoardDom();
 render();
+renderLog();
+
+// ===== 기물 행마 설명 모달 =====
+function makeGrid(size){ return Array.from({length:size}, () => Array(size).fill(null)); }
+
+const PIECE_MODAL_DATA = {
+  K: {
+    name: '킹 (K)', icon:'♔',
+    boards: [{
+      label:'만 (8방향 1칸)',
+      grid: (() => {
+        const g = makeGrid(7); g[3][3]='piece-cell';
+        for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='mv-cap';
+        return g;
+      })(),
+      desc:'8방향 1칸 이동 및 캡처.',
+      legends:[['mv-cap','#7a5500','이동+캡처']]
+    }]
+  },
+  N: {
+    name: '나이트 (켄타우로스)', icon:'♘',
+    boards: [{
+      label:'만 이동 + 나이트 캡처',
+      grid: (() => {
+        const g = makeGrid(7); g[3][3]='piece-cell';
+        for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='mv';
+        for(const [dr,dc] of [[1,2],[1,-2],[-1,2],[-1,-2],[2,1],[2,-1],[-2,1],[-2,-1]]) g[3+dr][3+dc]='mv-cap';
+        return g;
+      })(),
+      desc:'8방향 1칸: 이동 전용(만). 나이트(L자) 8방향: 이동+캡처.',
+      legends:[['mv','#2a6a2a','이동 전용'],['mv-cap','#7a5500','이동+캡처']]
+    }]
+  },
+  R: {
+    name: '룩 (렌서)', icon:'♖',
+    boards: [{
+      label:'나이트 이동 + 룩 캡처',
+      grid: (() => {
+        const g = makeGrid(7); g[3][3]='piece-cell';
+        for(const [dr,dc] of [[1,2],[1,-2],[-1,2],[-1,-2],[2,1],[2,-1],[-2,1],[-2,-1]]) g[3+dr][3+dc]='mv';
+        for(let i=0;i<7;i++) if(i!==3){ g[3][i]='cap'; g[i][3]='cap'; }
+        return g;
+      })(),
+      desc:'나이트(L자) 8방향: 이동 전용. 직선 4방향 무제한: 캡처 전용.',
+      legends:[['mv','#2a6a2a','이동 전용'],['cap','#7a2020','캡처 전용']]
+    }]
+  },
+  Q: {
+    name: '퀸 (팔콘)', icon:'♕',
+    boards: [{
+      label:'퀸 이동 + 만 캡처',
+      grid: (() => {
+        const g = makeGrid(7); g[3][3]='piece-cell';
+        for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+        for(let i=1;i<=3;i++){
+          if(3-i>=0){ g[3-i][3-i]='mv'; g[3-i][3+i]='mv'; }
+          if(3+i<7){ g[3+i][3-i]='mv'; g[3+i][3+i]='mv'; }
+        }
+        for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='cap';
+        return g;
+      })(),
+      desc:'직선+대각 8방향 무제한: 이동 전용. 8방향 1칸: 캡처 전용.',
+      legends:[['mv','#2a6a2a','이동 전용'],['cap','#7a2020','캡처 전용']]
+    }]
+  },
+  B: {
+    name: '비숍', icon:'♗',
+    boards: [
+      {
+        label:'기본 (페르즈)',
+        grid: (() => {
+          const g = makeGrid(7); g[3][3]='piece-cell';
+          for(const [dr,dc] of [[1,1],[1,-1],[-1,1],[-1,-1]]) g[3+dr][3+dc]='mv-cap';
+          return g;
+        })(),
+        desc:'대각 4방향 1칸 이동 및 캡처.',
+        legends:[['mv-cap','#7a5500','이동+캡처']]
+      },
+      {
+        label:'장수(룩·나이트·퀸·킹) 인접 시',
+        grid: (() => {
+          const g = makeGrid(7); g[3][3]='piece-cell';
+          for(let i=1;i<=3;i++){
+            if(3-i>=0){ g[3-i][3-i]='mv-cap'; g[3-i][3+i]='mv-cap'; }
+            if(3+i<7){ g[3+i][3-i]='mv-cap'; g[3+i][3+i]='mv-cap'; }
+          }
+          return g;
+        })(),
+        desc:'직교로 인접한 아군 장수(룩/나이트/퀸/킹)가 있으면 대각 4방향 무제한 슬라이드로 강화.',
+        legends:[['mv-cap','#7a5500','이동+캡처']]
+      }
+    ]
+  },
+  P: {
+    name: '폰', icon:'♙',
+    boards: [{
+      label:'기본 + 지원 시 추가 이동 (종합)',
+      grid: (() => {
+        const g = makeGrid(5); g[2][2]='piece-cell';
+        g[1][2]='mv';
+        g[1][1]='cap'; g[1][3]='cap';
+        g[0][1]='cond'; g[0][2]='cond'; g[0][3]='cond';
+        g[1][0]='cond'; g[1][4]='cond';
+        g[2][0]='cond'; g[2][1]='cond'; g[2][3]='cond'; g[2][4]='cond';
+        g[3][0]='cond'; g[3][2]='cond'; g[3][4]='cond';
+        g[4][2]='cond';
+        return g;
+      })(),
+      desc:'정면 1칸: 이동 전용. 대각 앞 2방향: 캡처 전용(단, 반대편 대각 뒤에 아군 폰이 있으면 그 방향은 이동도 가능).',
+      legends:[['mv','#2a6a2a','이동 전용'],['cap','#7a2020','캡처 전용'],['cond','#4a4a9a','조건부 추가 이동(아래 설명 참고)']]
+    }],
+    note:[
+      '전방에 아군 폰이 있으면: 그 폰을 뛰어넘는 나이트 벡터 2칸(전진축2/측면축1) 이동 전용.',
+      '측면(좌/우)에 아군 폰이 있으면: 그 폰을 뛰어넘는 나이트 벡터 2칸(측면축2/전진축1) 이동 전용.',
+      '바로 뒤(같은 파일)에 아군 폰이 있으면: 정면 1칸이 비어있을 때 정면 2칸째까지 이동 전용.',
+      '앞/뒤/좌/우 중 아군 장수(룩·나이트·퀸·킹)가 인접하면: 그 반대 방향으로 1·2칸 슬라이드 이동(뒤쪽 지원은 이동+캡처 포함).'
+    ]
+  }
+};
+
+const PIECE_ORDER = ['P','N','R','B','Q','K'];
+let activePieceTab = 'P';
+
+function openPieceModal(){
+  document.getElementById('pieceModal').classList.add('show');
+  renderPieceTabs();
+  renderPieceContent(activePieceTab);
+}
+function closePieceModal(){
+  document.getElementById('pieceModal').classList.remove('show');
+}
+
+function renderPieceTabs(){
+  const tabs = document.getElementById('pieceTabs');
+  tabs.innerHTML = '';
+  for(const key of PIECE_ORDER){
+    const btn = document.createElement('button');
+    btn.className = 'ptab' + (key===activePieceTab ? ' active' : '');
+    btn.textContent = PIECE_MODAL_DATA[key].name;
+    btn.onclick = () => { activePieceTab = key; renderPieceTabs(); renderPieceContent(key); };
+    tabs.appendChild(btn);
+  }
+}
+
+function renderPieceContent(key){
+  const data = PIECE_MODAL_DATA[key];
+  const cont = document.getElementById('pieceContent');
+  cont.innerHTML = '';
+
+  for(const b of data.boards){
+    const sec = document.createElement('div');
+    sec.className = 'terrain-section';
+
+    const h5 = document.createElement('h5');
+    h5.textContent = b.label;
+    sec.appendChild(h5);
+
+    const grid = b.grid;
+    const size = grid.length;
+    const mb = document.createElement('div');
+    mb.className = 'mini-board';
+    mb.style.gridTemplateColumns = `repeat(${size}, 30px)`;
+    mb.style.gridTemplateRows = `repeat(${size}, 30px)`;
+
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        const cell = document.createElement('div');
+        cell.className = 'mc';
+        const sp = grid[r][c];
+        if(sp) cell.classList.add(sp);
+        if(sp==='piece-cell') cell.textContent = data.icon;
+        mb.appendChild(cell);
+      }
+    }
+    sec.appendChild(mb);
+
+    const leg = document.createElement('div');
+    leg.className = 'legend-row';
+    for(const [cls, color, lbl] of b.legends){
+      leg.innerHTML += `<div class="leg"><div class="leg-box" style="background:${color}"></div>${lbl}</div>`;
+    }
+    sec.appendChild(leg);
+    cont.appendChild(sec);
+  }
+
+  if(data.note){
+    const note = document.createElement('div');
+    note.className = 'pawn-note';
+    note.innerHTML = data.note.map((line,i) => `${i+1}. ${line}`).join('<br>');
+    cont.appendChild(note);
+  }
+}
 </script>
 
 </body>
