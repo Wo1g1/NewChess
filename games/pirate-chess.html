@@ -23,23 +23,23 @@ h1 { font-size: 20px; color: #d4a843; letter-spacing: 2px; margin-bottom: 10px; 
 
 #rank-labels {
   display: flex; flex-direction: column;
-  height: 500px;
+  height: 480px;
 }
 #rank-labels span {
   font-size: 10px; color: #777; width: 16px; text-align: center;
-  height: 50px; line-height: 50px;
+  height: 48px; line-height: 48px;
 }
 #board-col { display: flex; flex-direction: column; align-items: center; }
 #board {
   display: grid;
-  grid-template-columns: repeat(10, 50px);
-  grid-template-rows: repeat(10, 50px);
+  grid-template-columns: repeat(10, 48px);
+  grid-template-rows: repeat(10, 48px);
   border: 2px solid #555;
 }
 .cell {
-  width: 50px; height: 50px;
+  width: 48px; height: 48px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 24px; position: relative; user-select: none;
+  cursor: pointer; font-size: 23px; position: relative; user-select: none;
 }
 .sea-light  { background: #1e4a7a; }
 .sea-dark   { background: #163860; }
@@ -56,7 +56,7 @@ h1 { font-size: 20px; color: #d4a843; letter-spacing: 2px; margin-bottom: 10px; 
 .cell.valid-capture { background: #7a1e1e !important; }
 .cell.check-cell    { background: #9a1010 !important; }
 
-#file-labels { display: grid; grid-template-columns: repeat(10, 50px); margin-top: 3px; }
+#file-labels { display: grid; grid-template-columns: repeat(10, 48px); margin-top: 3px; }
 #file-labels span { font-size: 10px; color: #777; text-align: center; }
 
 /* 우측 패널 */
@@ -215,6 +215,14 @@ button:hover { background: #3a3a5a; }
     </div>
     <div id="ai-box">
       <h4>AI 설정</h4>
+      <div style="display:flex; align-items:center; gap:10px; font-size:11px; margin-bottom:6px;">
+        <label style="display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="aiDepth" value="4"> 깊이4
+        </label>
+        <label style="display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="aiDepth" value="5" checked> 깊이5
+        </label>
+      </div>
       <div class="ai-toggle">
         <span>백(W) AI</span>
         <button class="toggle-btn" id="ai-w-btn" onclick="toggleAI('W')">OFF</button>
@@ -248,6 +256,7 @@ button:hover { background: #3a3a5a; }
 </div>
 
 <script>
+const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수 (10x10 고정 보드라 CSS에서 48px 셀로 직접 반영)
 const FILES = ['a','b','c','d','e','f','g','h','i','j'];
 
 // 내부 배열: board[row][col], row 0 = rank 1 (백 후방), row 9 = rank 10 (흑 후방)
@@ -602,6 +611,13 @@ function renderPieceContent(key) {
 let aiEnabled = { W: false, B: false };
 let aiWorker = null;
 let aiThinkingFor = null;
+let SEARCH_DEPTH = 5;
+
+document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
+  radio.onchange = (e) => {
+    if(e.target.checked) SEARCH_DEPTH = parseInt(e.target.value);
+  };
+});
 
 function toggleAI(color) {
   aiEnabled[color] = !aiEnabled[color];
@@ -629,8 +645,8 @@ function triggerAI() {
   const workerCode = `
     ${serializeFunctions()}
     onmessage = function(e) {
-      const { boardData, color, campW, campB, needsSeaW, needsSeaB } = e.data;
-      const move = findBestMove(boardData, color, campW, campB, needsSeaW, needsSeaB);
+      const { boardData, color, campW, campB, needsSeaW, needsSeaB, maxDepth } = e.data;
+      const move = findBestMove(boardData, color, campW, campB, needsSeaW, needsSeaB, maxDepth);
       postMessage(move);
     };
   `;
@@ -657,7 +673,8 @@ function triggerAI() {
     campW: campCount['W'],
     campB: campCount['B'],
     needsSeaW: campNeedsSea['W'],
-    needsSeaB: campNeedsSea['B']
+    needsSeaB: campNeedsSea['B'],
+    maxDepth: SEARCH_DEPTH
   });
 }
 
@@ -943,7 +960,7 @@ function minimax(b, depth, alpha, beta, maximizing, campW, campB, needsSeaW, nee
   }
 }
 
-function findBestMove(b, color, campW, campB, needsSeaW, needsSeaB) {
+function findBestMove(b, color, campW, campB, needsSeaW, needsSeaB, maxDepth) {
   searchStart = Date.now();
   const maximizing = color==='W';
   let bestMove = null;
@@ -953,8 +970,8 @@ function findBestMove(b, color, campW, campB, needsSeaW, needsSeaB) {
       for(const m of getLegalMoves(c,r,b,color)) moves.push({fc:c,fr:r,tc:m.col,tr:m.row});
   for(let i=moves.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [moves[i],moves[j]]=[moves[j],moves[i]]; }
 
-  // iterative deepening: 깊이 1부터 시간 초과 전까지 깊이 증가
-  for(let depth=1; depth<=6; depth++){
+  // iterative deepening: 깊이 1부터 선택한 최대 깊이(또는 시간 초과) 전까지 깊이 증가
+  for(let depth=1; depth<=maxDepth; depth++){
     if(Date.now()-searchStart > TIME_LIMIT) break;
     let best = maximizing ? -Infinity : Infinity;
     let currentBest = null;
