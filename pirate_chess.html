@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>해적 체스 (Pirate Chess)</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+h1 { font-size: 20px; color: #d4a843; letter-spacing: 2px; margin-bottom: 10px; }
+
+/* 메인 레이아웃: 보드 + 우측 패널 */
+#main-layout { display: flex; gap: 14px; align-items: flex-start; }
+
+#rank-labels {
+  display: flex; flex-direction: column;
+  height: 500px;
+}
+#rank-labels span {
+  font-size: 10px; color: #777; width: 16px; text-align: center;
+  height: 50px; line-height: 50px;
+}
+#board-col { display: flex; flex-direction: column; align-items: center; }
+#board {
+  display: grid;
+  grid-template-columns: repeat(10, 50px);
+  grid-template-rows: repeat(10, 50px);
+  border: 2px solid #555;
+}
+.cell {
+  width: 50px; height: 50px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 24px; position: relative; user-select: none;
+}
+.sea-light  { background: #1e4a7a; }
+.sea-dark   { background: #163860; }
+.land-light { background: #4a7230; }
+.land-dark  { background: #3a5c24; }
+
+.cell.selected    { background: #9a8010 !important; }
+.cell.valid-move  { background: #6a6010 !important; }
+.cell.valid-move::after {
+  content: ''; position: absolute;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(255,220,50,0.45); pointer-events: none;
+}
+.cell.valid-capture { background: #7a1e1e !important; }
+.cell.check-cell    { background: #9a1010 !important; }
+
+#file-labels { display: grid; grid-template-columns: repeat(10, 50px); margin-top: 3px; }
+#file-labels span { font-size: 10px; color: #777; text-align: center; }
+
+/* 우측 패널 */
+#side-panel {
+  display: flex; flex-direction: column; gap: 10px;
+  width: 200px; min-height: 500px;
+}
+#turn-box {
+  background: #12122a; border: 1px solid #d4a843;
+  border-radius: 6px; padding: 10px 12px; text-align: center;
+}
+#turn-indicator { font-size: 14px; font-weight: bold; color: #d4a843; }
+#status-bar { font-size: 11px; color: #aaa; margin-top: 4px; min-height: 14px; }
+
+#rules-box {
+  background: #12122a; border: 1px solid #444;
+  border-radius: 6px; padding: 10px 12px; flex: 1;
+  overflow-y: auto;
+}
+#rules-box h4 { font-size: 12px; color: #d4a843; margin-bottom: 6px; }
+#rules-box p, #rules-box li { font-size: 10px; color: #999; line-height: 1.5; }
+#rules-box ul { padding-left: 14px; }
+
+#btn-box {
+  background: #12122a; border: 1px solid #444;
+  border-radius: 6px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+#ai-box {
+  background: #12122a; border: 1px solid #444;
+  border-radius: 6px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+#ai-box h4 { font-size: 11px; color: #d4a843; margin-bottom: 2px; }
+.ai-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: #aaa;
+}
+.toggle-btn {
+  background: #2a2a2a; color: #888; border: 1px solid #555;
+  padding: 3px 10px; cursor: pointer; font-size: 11px; border-radius: 12px;
+  width: auto; transition: all 0.15s;
+}
+.toggle-btn.on { background: #1a4a1a; color: #6f6; border-color: #4a8a4a; }
+.toggle-btn:hover { opacity: 0.85; }
+#ai-thinking { font-size: 10px; color: #d4a843; min-height: 14px; text-align: center; }
+button {
+  background: #2a2a4a; color: #d4a843; border: 1px solid #d4a843;
+  padding: 6px 10px; cursor: pointer; font-size: 12px; border-radius: 4px;
+  width: 100%;
+}
+button:hover { background: #3a3a5a; }
+
+/* 기보 */
+#log-box {
+  margin-top: 10px;
+  background: #12122a; border: 1px solid #444;
+  border-radius: 6px; padding: 8px 12px;
+  width: 100%; max-width: 720px;
+  max-height: 80px; overflow-y: auto;
+}
+#log { font-size: 11px; color: #888; font-family: monospace; white-space: pre-wrap; }
+
+#promotion-modal, #piece-modal {
+  display: none; position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  align-items: center; justify-content: center; z-index: 100;
+}
+#promotion-modal.show, #piece-modal.show { display: flex; }
+#piece-modal-box {
+  background: #1a1a2e; border: 2px solid #d4a843;
+  border-radius: 10px; padding: 20px; width: 520px; max-height: 90vh;
+  overflow-y: auto; position: relative;
+}
+#piece-modal-box h3 { color: #d4a843; font-size: 15px; margin-bottom: 12px; text-align: center; }
+#piece-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+.ptab {
+  background: #2a2a4a; color: #aaa; border: 1px solid #444;
+  padding: 4px 9px; cursor: pointer; font-size: 11px; border-radius: 4px;
+}
+.ptab.active { background: #3a3a6a; color: #d4a843; border-color: #d4a843; }
+.ptab:hover { background: #3a3a5a; }
+#piece-content { display: flex; gap: 16px; align-items: flex-start; }
+.terrain-section { flex: 1; }
+.terrain-section h5 { font-size: 11px; color: #d4a843; margin-bottom: 6px; text-align: center; }
+.mini-board {
+  display: grid;
+  gap: 1px;
+  background: #333;
+  border: 1px solid #555;
+  width: fit-content;
+  margin: 0 auto 6px auto;
+}
+.mc { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.mc.sea-l { background: #1e4a7a; }
+.mc.sea-d { background: #163860; }
+.mc.land-l { background: #4a7230; }
+.mc.land-d { background: #3a5c24; }
+.mc.mv  { background: #4a7a10 !important; }
+.mc.cap { background: #7a2020 !important; }
+.mc.harpoon { background: #c8860a !important; }
+.mc.hurdle { background: #7a6000 !important; }
+.mc.locust-land { background: #7a2a7a !important; }
+.mc.mv-cap  { background: #7a5500 !important; }
+.mc.piece-cell { background: #9a8010 !important; }
+.mc.ally { background: #2a5a9a !important; }
+.piece-desc { font-size: 10px; color: #999; line-height: 1.6; margin-top: 4px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.leg { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #aaa; }
+.leg-box { width: 12px; height: 12px; border-radius: 2px; }
+#piece-close {
+  position: absolute; top: 10px; right: 14px;
+  background: none; border: none; color: #888; font-size: 18px; cursor: pointer; width: auto;
+}
+#piece-close:hover { color: #d4a843; }
+#promotion-box {
+  background: #1a1a2e; border: 2px solid #d4a843;
+  padding: 20px; border-radius: 8px; text-align: center;
+}
+#promotion-box h3 { color: #d4a843; margin-bottom: 10px; font-size: 15px; }
+.promo-btn {
+  font-size: 28px; margin: 5px; width: 48px; height: 48px;
+  background: #2a2a4a; border: 1px solid #555; cursor: pointer; border-radius: 5px;
+}
+.promo-btn:hover { background: #3a3a5a; border-color: #d4a843; }
+</style>
+</head>
+<body>
+<h1>⚓ 해적 체스 (Pirate Chess)</h1>
+<div id="main-layout">
+  <!-- 보드 영역 -->
+  <div style="display:flex;gap:4px;align-items:flex-start;">
+    <div id="rank-labels"></div>
+    <div id="board-col">
+      <div id="board"></div>
+      <div id="file-labels">
+        <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span>
+        <span>f</span><span>g</span><span>h</span><span>i</span><span>j</span>
+      </div>
+    </div>
+  </div>
+  <!-- 우측 패널 -->
+  <div id="side-panel">
+    <div id="turn-box">
+      <div id="turn-indicator">백(White) 차례</div>
+      <div id="status-bar"></div>
+    </div>
+    <div id="rules-box">
+      <button onclick="openPieceModal()" style="width:100%;margin-bottom:0;">기물 행마 보기</button>
+      <div style="margin-top:8px;font-size:10px;color:#888;">
+        <div style="color:#d4a843;font-size:11px;margin-bottom:4px;">승리 조건</div>
+        <div>• 체크메이트</div>
+        <div>• 선장이 육지에서 2턴 연속 체크 없이 생존</div>
+      </div>
+    </div>
+    <div id="ai-box">
+      <h4>AI 설정</h4>
+      <div class="ai-toggle">
+        <span>백(W) AI</span>
+        <button class="toggle-btn" id="ai-w-btn" onclick="toggleAI('W')">OFF</button>
+      </div>
+      <div class="ai-toggle">
+        <span>흑(B) AI</span>
+        <button class="toggle-btn" id="ai-b-btn" onclick="toggleAI('B')">OFF</button>
+      </div>
+      <div id="ai-thinking"></div>
+    </div>
+    <div id="btn-box">
+      <button onclick="undoMove()">되돌리기</button>
+      <button onclick="resetGame()">새 게임</button>
+    </div>
+  </div>
+</div>
+<div id="log-box"><div id="log"></div></div>
+<div id="piece-modal">
+  <div id="piece-modal-box">
+    <button id="piece-close" onclick="closePieceModal()">✕</button>
+    <h3>기물 행마 안내</h3>
+    <div id="piece-tabs"></div>
+    <div id="piece-content"></div>
+  </div>
+</div>
+<div id="promotion-modal">
+  <div id="promotion-box">
+    <h3>승격 선택</h3>
+    <div id="promo-choices"></div>
+  </div>
+</div>
+
+<script>
+const FILES = ['a','b','c','d','e','f','g','h','i','j'];
+
+// 내부 배열: board[row][col], row 0 = rank 1 (백 후방), row 9 = rank 10 (흑 후방)
+// 백(W)이 rank 1(row 0) 아래, 흑(B)이 rank 10(row 9) 위
+// 화면 렌더: row 9(rank10)가 맨 위, row 0(rank1)이 맨 아래
+
+function isLand(col, row) {
+  // rank 4-7 = row 3-6, col c-h = col 2-7
+  return col >= 2 && col <= 7 && row >= 3 && row <= 6;
+}
+
+function cellClass(col, row) {
+  const land = isLand(col, row);
+  const checker = (col + row) % 2 === 0;
+  if(land) return checker ? 'land-light' : 'land-dark';
+  else      return checker ? 'sea-light'  : 'sea-dark';
+}
+
+const GLYPHS = {
+  W: { king:'♔', queen:'♕', rook:'♖', bishop:'♗', knight:'♘', pawn:'♙', cannon:'◎' },
+  B: { king:'♚', queen:'♛', rook:'♜', bishop:'♝', knight:'♞', pawn:'♟', cannon:'◉' }
+};
+
+const NAMES = { king:'선장', queen:'조타수', rook:'전함', bishop:'작살수', knight:'돌격대', pawn:'선원', cannon:'함포' };
+
+// 초기 배치: a=전함, b=작살수, c=함포, d=돌격대, e=조타수, f=선장, g=돌격대, h=함포, i=작살수, j=전함
+const BACK = ['rook','bishop','cannon','knight','queen','king','knight','cannon','bishop','rook'];
+
+let board, turn, selected, history, gameOver, campCount, campNeedsSea, promotionPending;
+let moveCount, moveLog;
+const INITIALS = { rook:'R', bishop:'B', cannon:'C', knight:'N', queen:'Q', king:'K', pawn:'' };
+
+function makeInitialBoard() {
+  const b = Array.from({length:10}, () => Array(10).fill(null));
+  // 백: row 0 = rank 1 (후방), row 1 = rank 2 (폰)
+  for(let c=0;c<10;c++){
+    b[0][c] = { color:'W', type: BACK[c] };
+    b[1][c] = { color:'W', type:'pawn' };
+  }
+  // 흑: row 9 = rank 10 (후방), row 8 = rank 9 (폰)
+  for(let c=0;c<10;c++){
+    b[9][c] = { color:'B', type: BACK[c] };
+    b[8][c] = { color:'B', type:'pawn' };
+  }
+  return b;
+}
+
+// ===== 기물 행마 모달 =====
+const PIECE_ICONS = {
+  pawn:'♙', rook:'♖', bishop:'♗', cannon:'◎', knight:'♘', queen:'♕', king:'♔'
+};
+
+// 각 기물 데이터: boards 배열로 여러 보드 지원
+function makeGrid(size){ return Array.from({length:size},()=>Array(size).fill(null)); }
+
+function buildBishopBoards(){
+  // 보드1: 만 이동(8방향 1칸) + 작살이동
+  // 작살이동: 아군이 대각선에 있을 때 아군 직전까지 슬라이드
+  // 대각 1칸(만 이동)과 작살이동 슬라이드 칸은 겹치지 않음
+  // 예시: 아군을 (0,2)(우상단 대각 끝)에 배치 → (1,2)는 만 이동, (2,2),(3,3 제외) 사이 슬라이드
+  // 더 명확하게: 아군을 (0,6)에 놓고 작살이동은 (1,5),(2,4) — 대각 1칸(4,4)와 겹치지 않음
+  const g1 = makeGrid(7);
+  g1[3][3]='piece-cell';
+  // 직선 4방향 1칸 (만) - 초록
+  for(const[dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]) g1[3+dr][3+dc]='mv';
+  // 대각 1칸 (만) - 초록, 작살이동과 무관
+  for(const[dr,dc] of [[1,1],[1,-1],[-1,1],[-1,-1]]) g1[3+dr][3+dc]='mv';
+  // 작살이동 예시:
+  // 우상단(dr=-1,dc=+1) 아군@(0,6): 슬라이드 칸은 (2,4),(1,5)
+  // (2,4)는 만 이동 대각 1칸과 겹치므로 mv 유지, (1,5)만 harpoon
+  g1[0][6]='ally';
+  g1[1][5]='harpoon';
+  // g1[2][4] 는 이미 mv (만 이동) — 덮지 않음
+  // 좌하단(dr=+1,dc=-1) 아군@(6,0): 슬라이드 칸 (4,2),(5,1)
+  // (4,2)는 만 이동 대각 1칸과 겹치므로 mv 유지, (5,1)만 harpoon
+  g1[6][0]='ally';
+  g1[5][1]='harpoon';
+
+  // 보드2: 비숍 캡처 (대각 무제한)
+  const g2 = makeGrid(7);
+  g2[3][3]='piece-cell';
+  for(let i=1;i<=3;i++){
+    g2[3-i][3-i]='cap';
+    g2[3-i][3+i]='cap';
+    g2[3+i][3-i]='cap';
+    g2[3+i][3+i]='cap';
+  }
+
+  // 보드3: 육지 — 비숍 (이동+캡처 동일)
+  const g3 = makeGrid(7);
+  g3[3][3]='piece-cell';
+  for(let i=1;i<=3;i++){
+    g3[3-i][3-i]='mv';
+    g3[3-i][3+i]='mv';
+    g3[3+i][3-i]='mv';
+    g3[3+i][3+i]='mv';
+  }
+
+  return [
+    { label:'바다 — 이동 (만+작살)',
+      grid:g1,
+      desc:'8방향 1칸 이동(만). 대각선 방향에 아군이 있으면 아군 직전 칸까지 슬라이드 이동 가능(작살이동). 작살이동은 만 이동 1칸 너머부터 적용.',
+      legends:[['mv','#4a7a10','이동(만)'],['harpoon','#c8860a','작살이동'],['ally','#2a5a9a','아군']] },
+    { label:'바다 — 캡처 (비숍)',
+      grid:g2,
+      desc:'대각선 무제한 사거리 캡처. 7×7 보드 범위 밖으로도 계속 이어짐.',
+      legends:[['cap','#7a2020','캡처']] },
+    { label:'육지 (비숍)',
+      grid:g3,
+      desc:'대각선 4방향 무제한 이동 및 캡처.',
+      legends:[['mv','#4a7a10','이동/캡처']] }
+  ];
+}
+
+const PIECE_MODAL_DATA = {
+  pawn: {
+    name: '선원 (P)', icon:'♙',
+    boards: [
+      { label:'바다',
+        grid: (()=>{
+          const g=makeGrid(5); g[2][2]='piece-cell';
+          // 앞 직진: 이동만
+          g[1][2]='mv';
+          // 앞 대각: 이동+캡처 겸용
+          g[1][1]='mv-cap'; g[1][3]='mv-cap';
+          return g;
+        })(),
+        desc:'앞 직진 1칸: 이동만. 앞 대각 2방향: 이동+캡처 겸용.',
+        legends:[['mv','#4a7a10','이동'],['mv-cap','#7a5500','이동+캡처']]
+      },
+      { label:'육지 (은장)',
+        grid: (()=>{
+          const g=makeGrid(5); g[2][2]='piece-cell';
+          g[1][1]='mv'; g[1][2]='mv'; g[1][3]='mv';
+          g[3][1]='mv'; g[3][3]='mv';
+          return g;
+        })(),
+        desc:'앞 3방향 + 뒤 대각 2방향 총 5방향 1칸 이동 및 캡처.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      }
+    ]
+  },
+  rook: {
+    name: '전함 (R)', icon:'♖',
+    boards: [
+      { label:'바다 (룩)',
+        grid: (()=>{
+          const g=makeGrid(7);
+          g[3][3]='piece-cell';
+          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+          return g;
+        })(),
+        desc:'직선 4방향 무제한 이동 및 캡처.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      },
+      { label:'육지 (와지르)',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          for(const[dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]) g[3+dr][3+dc]='mv';
+          return g;
+        })(),
+        desc:'직선 4방향 1칸만 이동 및 캡처.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      }
+    ]
+  },
+  bishop: {
+    name: '작살수 (B)', icon:'♗',
+    boards: buildBishopBoards()
+  },
+  cannon: {
+    name: '함포 (C)', icon:'◎',
+    boards: [
+      { label:'바다 (로커스트) — 이동',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+          return g;
+        })(),
+        desc:'직선 빈 칸 자유 이동(룩처럼). 적이나 아군 기물 앞에서 멈춤.',
+        legends:[['mv','#4a7a10','이동']]
+      },
+      { label:'바다 (로커스트) — 공격',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          // 오른쪽: 적(허들)(3,5), 착지(3,6)
+          g[3][4]='mv'; g[3][5]='hurdle'; g[3][6]='locust-land';
+          // 아래: 적(허들)(5,3), 착지(6,3)
+          g[4][3]='mv'; g[5][3]='hurdle'; g[6][3]='locust-land';
+          // 왼쪽: 적(허들)(3,1), 착지(3,0)
+          g[3][2]='mv'; g[3][1]='hurdle'; g[3][0]='locust-land';
+          // 위: 적(허들)(1,3), 착지(0,3)
+          g[2][3]='mv'; g[1][3]='hurdle'; g[0][3]='locust-land';
+          return g;
+        })(),
+        desc:'직선 경로에서 첫 번째 적을 뛰어넘어 바로 뒷 빈 칸에 착지하며 적 제거. 아군은 넘을 수 없고, 착지칸이 막히면 불가.',
+        legends:[['mv','#4a7a10','이동'],['hurdle','#7a6000','적(허들)'],['locust-land','#7a2a7a','착지(제거)']]
+      },
+      { label:'육지 (룩)',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+          return g;
+        })(),
+        desc:'직선 4방향 무제한 이동 및 캡처.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      }
+    ]
+  },
+  knight: {
+    name: '돌격대 (N)', icon:'♘',
+    boards: [
+      { label:'바다/육지 공통 (나이트)',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          for(const[dr,dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]){
+            const r=3+dr,c=3+dc;
+            if(r>=0&&r<7&&c>=0&&c<7) g[r][c]='mv';
+          }
+          return g;
+        })(),
+        desc:'L자(2칸+1칸) 점프. 지형에 관계없이 항상 동일. 중간 기물 무시.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      }
+    ]
+  },
+  queen: {
+    name: '조타수 (Q)', icon:'♕',
+    boards: [
+      { label:'바다 (퀸)',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+          for(let i=1;i<=3;i++){
+            if(3-i>=0){ g[3-i][3-i]='mv'; g[3-i][3+i]='mv'; }
+            if(3+i<7){ g[3+i][3-i]='mv'; g[3+i][3+i]='mv'; }
+          }
+          return g;
+        })(),
+        desc:'직선+대각 8방향 무제한 이동 및 캡처.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      },
+      { label:'육지 (만)',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++)
+            if(dr||dc) g[3+dr][3+dc]='mv';
+          return g;
+        })(),
+        desc:'8방향 1칸 이동 및 캡처.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      }
+    ]
+  },
+  king: {
+    name: '선장 (K)', icon:'♔',
+    boards: [
+      { label:'바다/육지 공통 (만)',
+        grid: (()=>{
+          const g=makeGrid(7); g[3][3]='piece-cell';
+          for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++)
+            if(dr||dc) g[3+dr][3+dc]='mv';
+          return g;
+        })(),
+        desc:'8방향 1칸 이동. 체크메이트 또는 육지 2턴 생존 시 승리.',
+        legends:[['mv','#4a7a10','이동/캡처']]
+      }
+    ]
+  }
+};
+
+const PIECE_ORDER = ['pawn','rook','bishop','cannon','knight','queen','king'];
+let activePieceTab = 'pawn';
+
+function openPieceModal() {
+  document.getElementById('piece-modal').classList.add('show');
+  renderPieceTabs();
+  renderPieceContent(activePieceTab);
+}
+function closePieceModal() {
+  document.getElementById('piece-modal').classList.remove('show');
+}
+
+function renderPieceTabs() {
+  const tabs = document.getElementById('piece-tabs');
+  tabs.innerHTML = '';
+  for(const key of PIECE_ORDER){
+    const btn = document.createElement('button');
+    btn.className = 'ptab' + (key===activePieceTab?' active':'');
+    btn.textContent = PIECE_MODAL_DATA[key].name;
+    btn.onclick = () => { activePieceTab=key; renderPieceTabs(); renderPieceContent(key); };
+    tabs.appendChild(btn);
+  }
+}
+
+function renderPieceContent(key) {
+  const data = PIECE_MODAL_DATA[key];
+  const cont = document.getElementById('piece-content');
+  cont.innerHTML = '';
+  cont.style.flexWrap = 'wrap';
+
+  for(const b of data.boards){
+    const sec = document.createElement('div');
+    sec.className = 'terrain-section';
+    sec.style.marginBottom = '10px';
+
+    const h5 = document.createElement('h5');
+    h5.textContent = b.label;
+    sec.appendChild(h5);
+
+    const grid = b.grid;
+    const size = grid.length;
+    const mb = document.createElement('div');
+    mb.className = 'mini-board';
+    mb.style.gridTemplateColumns = `repeat(${size}, 32px)`;
+    mb.style.gridTemplateRows = `repeat(${size}, 32px)`;
+
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        const cell = document.createElement('div');
+        const isL = (r+c)%2===0;
+        cell.className = 'mc ' + (isL?'sea-l':'sea-d');
+        const sp = grid[r][c];
+        if(sp) cell.classList.add(sp);
+        if(sp==='piece-cell') cell.textContent = data.icon;
+        else if(sp==='ally')  cell.textContent = data.icon;
+        else if(sp==='hurdle') cell.textContent = '♟';
+        mb.appendChild(cell);
+      }
+    }
+    sec.appendChild(mb);
+
+    // legend
+    const leg = document.createElement('div');
+    leg.className = 'legend-row';
+    for(const[cls, color, lbl] of b.legends){
+      leg.innerHTML += `<div class="leg"><div class="leg-box" style="background:${color}"></div>${lbl}</div>`;
+    }
+    sec.appendChild(leg);
+
+    const desc = document.createElement('div');
+    desc.className = 'piece-desc';
+    desc.textContent = b.desc;
+    sec.appendChild(desc);
+
+    cont.appendChild(sec);
+  }
+}
+// ===== END 기물 행마 모달 =====
+
+// ===== AI ENGINE =====
+let aiEnabled = { W: false, B: false };
+let aiWorker = null;
+let aiThinkingFor = null;
+
+function toggleAI(color) {
+  aiEnabled[color] = !aiEnabled[color];
+  const btn = document.getElementById('ai-' + color.toLowerCase() + '-btn');
+  btn.textContent = aiEnabled[color] ? 'ON' : 'OFF';
+  btn.classList.toggle('on', aiEnabled[color]);
+  if(!aiEnabled[color] && aiThinkingFor === color) {
+    // 탐색 중 끄면 worker 종료
+    if(aiWorker) { aiWorker.terminate(); aiWorker = null; }
+    aiThinkingFor = null;
+    document.getElementById('ai-thinking').textContent = '';
+  }
+  if(aiEnabled[color] && turn === color && !gameOver) {
+    setTimeout(() => triggerAI(), 100);
+  }
+}
+
+function triggerAI() {
+  if(gameOver || !aiEnabled[turn] || aiThinkingFor) return;
+  aiThinkingFor = turn;
+  const color = turn;
+  document.getElementById('ai-thinking').textContent = (color==='W'?'백':'흑') + ' AI 계산 중...';
+
+  // Build worker code as blob
+  const workerCode = `
+    ${serializeFunctions()}
+    onmessage = function(e) {
+      const { boardData, color, campW, campB, needsSeaW, needsSeaB } = e.data;
+      const move = findBestMove(boardData, color, campW, campB, needsSeaW, needsSeaB);
+      postMessage(move);
+    };
+  `;
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  aiWorker = new Worker(url);
+  URL.revokeObjectURL(url);
+
+  aiWorker.onmessage = function(e) {
+    aiWorker = null;
+    aiThinkingFor = null;
+    document.getElementById('ai-thinking').textContent = '';
+    if(!aiEnabled[color] || gameOver || turn !== color) return;
+    const mv = e.data;
+    if(mv) {
+      selected = null;
+      doMove(mv.fc, mv.fr, mv.tc, mv.tr);
+    }
+  };
+
+  aiWorker.postMessage({
+    boardData: JSON.parse(JSON.stringify(board)),
+    color: turn,
+    campW: campCount['W'],
+    campB: campCount['B'],
+    needsSeaW: campNeedsSea['W'],
+    needsSeaB: campNeedsSea['B']
+  });
+}
+
+function serializeFunctions() {
+  return `
+const FILES = ${JSON.stringify(['a','b','c','d','e','f','g','h','i','j'])};
+
+function isLand(col, row) {
+  return col >= 2 && col <= 7 && row >= 3 && row <= 6;
+}
+function inBounds(c,r){ return c>=0&&c<10&&r>=0&&r<10; }
+
+function getRawMoves(col, row, b, color){
+  const piece = b[row][col];
+  if(!piece) return [];
+  const enemy = color==='W'?'B':'W';
+  const land = isLand(col, row);
+  const moves = [];
+  function addEmpty(c,r){ if(inBounds(c,r)&&!b[r][c]) moves.push({col:c,row:r}); }
+  function addCapture(c,r){ if(inBounds(c,r)&&b[r][c]&&b[r][c].color===enemy) moves.push({col:c,row:r}); }
+  function addFree(c,r){ if(inBounds(c,r)&&(!b[r][c]||b[r][c].color===enemy)) moves.push({col:c,row:r}); }
+  const t = piece.type;
+  if(t==='king'){
+    for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++) if(dc||dr) addFree(col+dc,row+dr);
+  } else if(t==='pawn'){
+    const dir = color==='W'?1:-1;
+    if(!land){
+      addEmpty(col,row+dir); addEmpty(col+1,row+dir); addEmpty(col-1,row+dir);
+      addCapture(col+1,row+dir); addCapture(col-1,row+dir);
+    } else {
+      for(const [dc,dr] of [[0,dir],[1,dir],[-1,dir],[1,-dir],[-1,-dir]]) addFree(col+dc,row+dr);
+    }
+  } else if(t==='rook'){
+    if(!land) slideRook(col,row,b,color,moves);
+    else for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]) addFree(col+dc,row+dr);
+  } else if(t==='bishop'){
+    if(!land) movesHarpooner(col,row,b,color,moves);
+    else slideBishop(col,row,b,color,moves);
+  } else if(t==='queen'){
+    if(!land){ slideRook(col,row,b,color,moves); slideBishop(col,row,b,color,moves); }
+    else for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++) if(dc||dr) addFree(col+dc,row+dr);
+  } else if(t==='knight'){
+    for(const[dc,dr] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) addFree(col+dc,row+dr);
+  } else if(t==='cannon'){
+    if(!land) movesCannon(col,row,b,color,moves);
+    else slideRook(col,row,b,color,moves);
+  }
+  return moves;
+}
+
+function slideRook(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    let c=col+dc,r=row+dr;
+    while(inBounds(c,r)){
+      if(b[r][c]){ if(b[r][c].color===enemy) moves.push({col:c,row:r}); break; }
+      moves.push({col:c,row:r}); c+=dc; r+=dr;
+    }
+  }
+}
+function slideBishop(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  for(const[dc,dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+    let c=col+dc,r=row+dr;
+    while(inBounds(c,r)){
+      if(b[r][c]){ if(b[r][c].color===enemy) moves.push({col:c,row:r}); break; }
+      moves.push({col:c,row:r}); c+=dc; r+=dr;
+    }
+  }
+}
+function movesHarpooner(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++){
+    if(!dc&&!dr) continue;
+    const nc=col+dc,nr=row+dr;
+    if(inBounds(nc,nr)&&(!b[nr][nc]||b[nr][nc].color===enemy)) moves.push({col:nc,row:nr});
+  }
+  for(const[dc,dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+    let c=col+dc,r=row+dr,prev_c=col,prev_r=row;
+    while(inBounds(c,r)){
+      if(b[r][c]){
+        if(b[r][c].color===enemy) moves.push({col:c,row:r});
+        else if(prev_c!==col||prev_r!==row){
+          if(!moves.some(m=>m.col===prev_c&&m.row===prev_r)) moves.push({col:prev_c,row:prev_r});
+        }
+        break;
+      }
+      prev_c=c; prev_r=r; c+=dc; r+=dr;
+    }
+  }
+}
+function movesCannon(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    let c=col+dc,r=row+dr;
+    while(inBounds(c,r)){ if(b[r][c]) break; moves.push({col:c,row:r}); c+=dc; r+=dr; }
+    if(inBounds(c,r)&&b[r][c]&&b[r][c].color===enemy){
+      const lc=c+dc,lr=r+dr;
+      if(inBounds(lc,lr)&&!b[lr][lc]) moves.push({col:lc,row:lr});
+    }
+  }
+}
+
+function findKing(color,b){
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(b[r][c]&&b[r][c].color===color&&b[r][c].type==='king') return {col:c,row:r};
+  return null;
+}
+function isInCheck(color,b){
+  const kp=findKing(color,b); if(!kp) return false;
+  const enemy=color==='W'?'B':'W';
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(b[r][c]&&b[r][c].color===enemy){
+      const mv=getRawMoves(c,r,b,enemy);
+      if(mv.some(m=>m.col===kp.col&&m.row===kp.row)) return true;
+    }
+  return false;
+}
+function getLegalMoves(col,row,b,color){
+  return getRawMoves(col,row,b,color).filter(m=>{
+    const nb=JSON.parse(JSON.stringify(b));
+    nb[m.row][m.col]=nb[row][col]; nb[row][col]=null;
+    return !isInCheck(color,nb);
+  });
+}
+
+const PIECE_VALUES = { pawn:1, knight:3, bishop:3.5, cannon:4.5, rook:5, queen:9, king:0 };
+
+function applyMove(b, fc, fr, tc, tr) {
+  const nb = JSON.parse(JSON.stringify(b));
+  const piece = nb[fr][fc];
+  if(piece.type==='cannon' && !isLand(fc,fr)){
+    const dc=tc===fc?0:(tc>fc?1:-1), dr=tr===fr?0:(tr>fr?1:-1);
+    let c=fc+dc,r=fr+dr;
+    while(c!==tc||r!==tr){ if(nb[r][c]){nb[r][c]=null;break;} c+=dc;r+=dr; }
+  }
+  nb[tr][tc]=piece; nb[fr][fc]=null;
+  if(piece.type==='pawn'){
+    const promRow=piece.color==='W'?9:0;
+    if(tr===promRow) nb[tr][tc]={color:piece.color,type:'queen'};
+  }
+  return nb;
+}
+
+function kingDist(b, color) {
+  // 상대 킹과의 거리 (맨해튼)
+  const myKing = findKing(color, b);
+  const oppKing = findKing(color==='W'?'B':'W', b);
+  if(!myKing||!oppKing) return 20;
+  return Math.abs(myKing.col-oppKing.col)+Math.abs(myKing.row-oppKing.row);
+}
+
+function landCenterDist(col, row) {
+  // 육지 중앙 (4.5, 4.5)까지 거리
+  return Math.abs(col-4.5)+Math.abs(row-4.5);
+}
+
+function evaluate(b, campW, campB, needsSeaW, needsSeaB) {
+  let score = 0;
+  let wKingPos=null, bKingPos=null;
+
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++){
+    const p=b[r][c]; if(!p) continue;
+    if(p.type==='king'){ if(p.color==='W') wKingPos={c,r}; else bKingPos={c,r}; continue; }
+    let val = PIECE_VALUES[p.type] || 0;
+    // 지형 보정
+    if(!isLand(c,r)){
+      if(p.type==='rook'||p.type==='queen'||p.type==='cannon') val *= 1.1;
+    } else {
+      if(p.type==='cannon') val *= 1.2;
+      if(p.type==='rook') val *= 0.5;
+      if(p.type==='queen') val *= 0.4;
+    }
+    score += p.color==='W' ? val : -val;
+  }
+
+  // 캠프메이트 카운트: 승리에 직결되므로 높은 가중치
+  // 카운트 2/3는 패배 직전 — 매우 높은 가중치
+  const campWScore = campW>=2 ? 500 : campW * 5;
+  const campBScore = campB>=2 ? 500 : campB * 5;
+  score += campWScore;
+  score -= campBScore;
+
+  // 바다 귀환 페널티
+  if(needsSeaW) score -= 3;
+  if(needsSeaB) score += 3;
+
+  // 백 킹 육지 중앙 진입 유도 (캠프메이트 능동 추구)
+  if(wKingPos){
+    if(isLand(wKingPos.c, wKingPos.r)){
+      score += 3 - landCenterDist(wKingPos.c, wKingPos.r) * 0.3;
+    }
+  }
+  // 흑 킹 육지 중앙 진입 유도
+  if(bKingPos){
+    if(isLand(bKingPos.c, bKingPos.r)){
+      score -= 3 - landCenterDist(bKingPos.c, bKingPos.r) * 0.3;
+    }
+  }
+
+  // 상대 킹 압박: 킹들이 가까울수록 공격 기회 (약한 보너스)
+  if(wKingPos && bKingPos){
+    const dist = Math.abs(wKingPos.c-bKingPos.c)+Math.abs(wKingPos.r-bKingPos.r);
+    // 백 입장에서 흑 킹에 압박 가하는 기물 수 보너스
+    let wAttackers=0, bAttackers=0;
+    for(let r=0;r<10;r++) for(let c=0;c<10;c++){
+      const p=b[r][c]; if(!p||p.type==='king') continue;
+      const mv=getRawMoves(c,r,b,p.color);
+      if(p.color==='W' && mv.some(m=>m.col===bKingPos.c&&m.row===bKingPos.r)) wAttackers++;
+      if(p.color==='B' && mv.some(m=>m.col===wKingPos.c&&m.row===wKingPos.r)) bAttackers++;
+    }
+    score += wAttackers * 0.5;
+    score -= bAttackers * 0.5;
+  }
+
+  return score;
+}
+
+function updateCampAI(nb, mover, campW, campB, needsSeaW, needsSeaB) {
+  let cW=campW, cB=campB, nsW=needsSeaW, nsB=needsSeaB;
+  const kpM = findKing(mover, nb);
+  if(kpM){
+    const onLand = isLand(kpM.col, kpM.row);
+    const inChk = isInCheck(mover, nb);
+    if(mover==='W'){
+      if(!onLand && nsW) nsW=false;
+      if(onLand && !inChk && !nsW){ cW++; if(cW>=3) cW=99; }
+      else if(inChk){ cW=0; if(onLand) nsW=true; }
+      else if(!onLand) cW=0;
+    } else {
+      if(!onLand && nsB) nsB=false;
+      if(onLand && !inChk && !nsB){ cB++; if(cB>=3) cB=99; }
+      else if(inChk){ cB=0; if(onLand) nsB=true; }
+      else if(!onLand) cB=0;
+    }
+  }
+  const opp = mover==='W'?'B':'W';
+  const kpO = findKing(opp, nb);
+  if(kpO && isInCheck(opp, nb)){
+    if(opp==='W'){ cW=0; if(isLand(kpO.col,kpO.row)) nsW=true; }
+    else { cB=0; if(isLand(kpO.col,kpO.row)) nsB=true; }
+  }
+  return {cW,cB,nsW,nsB};
+}
+
+let searchStart = 0;
+const TIME_LIMIT = 9500; // 9.5초
+
+function minimax(b, depth, alpha, beta, maximizing, campW, campB, needsSeaW, needsSeaB) {
+  if(campW>=3) return 9999;
+  if(campB>=3) return -9999;
+  if(Date.now()-searchStart > TIME_LIMIT) return evaluate(b,campW,campB,needsSeaW,needsSeaB);
+  if(depth === 0) return evaluate(b, campW, campB, needsSeaW, needsSeaB);
+  const color = maximizing ? 'W' : 'B';
+  let moves = [];
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(b[r][c]&&b[r][c].color===color)
+      for(const m of getLegalMoves(c,r,b,color)) moves.push({fc:c,fr:r,tc:m.col,tr:m.row});
+  if(moves.length===0) return maximizing ? -9999 : 9999;
+
+  if(maximizing){
+    let best=-Infinity;
+    for(const mv of moves){
+      if(Date.now()-searchStart > TIME_LIMIT) break;
+      const nb=applyMove(b,mv.fc,mv.fr,mv.tc,mv.tr);
+      const nc=updateCampAI(nb,'W',campW,campB,needsSeaW,needsSeaB);
+      const val=minimax(nb,depth-1,alpha,beta,false,nc.cW,nc.cB,nc.nsW,nc.nsB);
+      best=Math.max(best,val); alpha=Math.max(alpha,val);
+      if(beta<=alpha) break;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(const mv of moves){
+      if(Date.now()-searchStart > TIME_LIMIT) break;
+      const nb=applyMove(b,mv.fc,mv.fr,mv.tc,mv.tr);
+      const nc=updateCampAI(nb,'B',campW,campB,needsSeaW,needsSeaB);
+      const val=minimax(nb,depth-1,alpha,beta,true,nc.cW,nc.cB,nc.nsW,nc.nsB);
+      best=Math.min(best,val); beta=Math.min(beta,val);
+      if(beta<=alpha) break;
+    }
+    return best;
+  }
+}
+
+function findBestMove(b, color, campW, campB, needsSeaW, needsSeaB) {
+  searchStart = Date.now();
+  const maximizing = color==='W';
+  let bestMove = null;
+  const moves = [];
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(b[r][c]&&b[r][c].color===color)
+      for(const m of getLegalMoves(c,r,b,color)) moves.push({fc:c,fr:r,tc:m.col,tr:m.row});
+  for(let i=moves.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [moves[i],moves[j]]=[moves[j],moves[i]]; }
+
+  // iterative deepening: 깊이 1부터 시간 초과 전까지 깊이 증가
+  for(let depth=1; depth<=6; depth++){
+    if(Date.now()-searchStart > TIME_LIMIT) break;
+    let best = maximizing ? -Infinity : Infinity;
+    let currentBest = null;
+    for(const mv of moves){
+      if(Date.now()-searchStart > TIME_LIMIT) break;
+      const nb=applyMove(b,mv.fc,mv.fr,mv.tc,mv.tr);
+      const nCamp=updateCampAI(nb,color,campW,campB,needsSeaW,needsSeaB);
+      const val=minimax(nb,depth-1,-Infinity,Infinity,!maximizing,nCamp.cW,nCamp.cB,nCamp.nsW,nCamp.nsB);
+      if(maximizing?val>best:val<best){ best=val; currentBest=mv; }
+    }
+    if(currentBest) bestMove=currentBest;
+  }
+  return bestMove;
+}
+  `;
+}
+// ===== END AI ENGINE =====
+
+function resetGame() {
+  board = makeInitialBoard();
+  turn = 'W';
+  selected = null;
+  history = [];
+  gameOver = false;
+  campCount = { W:0, B:0 };
+  campNeedsSea = { W:false, B:false };
+  promotionPending = null;
+  if(aiWorker){ aiWorker.terminate(); aiWorker=null; }
+  aiThinkingFor = null;
+  document.getElementById('ai-thinking').textContent = '';
+  document.getElementById('promotion-modal').classList.remove('show');
+  moveCount = 1;
+  moveLog = [];
+  renderLog();
+  setStatus('');
+  buildRankLabels();
+  render();
+}
+
+function buildRankLabels() {
+  const el = document.getElementById('rank-labels');
+  el.innerHTML = '';
+  for(let r=9;r>=0;r--){
+    const s = document.createElement('span');
+    s.textContent = r+1;
+    el.appendChild(s);
+  }
+}
+
+function label(col, row) { return FILES[col] + (row+1); }
+function setStatus(msg) { document.getElementById('status-bar').textContent = msg; }
+function logMove(fc, fr, tc, tr, pieceType, color) {
+  const ini = INITIALS[pieceType];
+  const mv = ini + label(fc,fr) + label(tc,tr);
+  if(color === 'W') {
+    moveLog.push({ w: mv, b: null, n: moveCount });
+  } else {
+    if(moveLog.length > 0 && moveLog[moveLog.length-1].b === null) {
+      moveLog[moveLog.length-1].b = mv;
+    } else {
+      moveLog.push({ w: null, b: mv, n: moveCount });
+    }
+    moveCount++;
+  }
+  renderLog();
+}
+function renderLog() {
+  const lines = moveLog.map(m => {
+    const w = m.w || '...';
+    const b = m.b || '';
+    return m.n + '.' + w + (b ? ' ' + b : '');
+  }).join('  ');
+  document.getElementById('log').textContent = lines;
+}
+
+function render() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  // 렌더: rank 10 (row9) 맨 위 → rank 1 (row0) 맨 아래
+  for(let r=9; r>=0; r--){
+    for(let c=0; c<10; c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell ' + cellClass(c, r);
+      cell.dataset.col = c;
+      cell.dataset.row = r;
+      cell.onclick = () => handleClick(c, r);
+      const piece = board[r][c];
+      if(piece) cell.textContent = GLYPHS[piece.color][piece.type];
+      boardEl.appendChild(cell);
+    }
+  }
+  document.getElementById('turn-indicator').textContent =
+    gameOver ? '게임 종료' : (turn==='W'?'백(White)':'흑(Black)') + ' 차례';
+  if(selected) highlightMoves(selected.col, selected.row);
+  markChecks();
+}
+
+function cellIndex(col, row) {
+  // 화면 상 인덱스: row9=첫번째 줄
+  return (9 - row) * 10 + col;
+}
+
+function highlightMoves(col, row) {
+  const moves = getLegalMoves(col, row, board, turn);
+  const boardEl = document.getElementById('board');
+  boardEl.children[cellIndex(col,row)].classList.add('selected');
+  for(const m of moves){
+    const idx = cellIndex(m.col, m.row);
+    if(board[m.row][m.col] && board[m.row][m.col].color !== turn)
+      boardEl.children[idx].classList.add('valid-capture');
+    else
+      boardEl.children[idx].classList.add('valid-move');
+  }
+}
+
+function markChecks() {
+  if(gameOver) return;
+  if(isInCheck(turn, board)){
+    const kp = findKing(turn, board);
+    if(kp) document.getElementById('board').children[cellIndex(kp.col,kp.row)].classList.add('check-cell');
+  }
+}
+
+function handleClick(col, row) {
+  if(gameOver || promotionPending) return;
+  const piece = board[row][col];
+  if(selected){
+    const moves = getLegalMoves(selected.col, selected.row, board, turn);
+    const mv = moves.find(m => m.col===col && m.row===row);
+    if(mv){ doMove(selected.col, selected.row, col, row); selected=null; return; }
+    selected = null;
+    if(piece && piece.color===turn) selected = {col, row};
+    render(); return;
+  }
+  if(piece && piece.color===turn){ selected={col,row}; render(); }
+}
+
+function doMove(fc, fr, tc, tr) {
+  history.push({ board: JSON.parse(JSON.stringify(board)), turn, campCount: {...campCount}, campNeedsSea: {...campNeedsSea}, moveCount, moveLog: JSON.parse(JSON.stringify(moveLog)) });
+  const piece = board[fr][fc];
+  let captured = board[tr][tc];
+  let locustTarget = null;
+
+  // 함포 로커스트: 바다에서 직선 이동 시 중간 기물 제거
+  if(piece.type==='cannon' && !isLand(fc,fr)){
+    const dc = tc===fc ? 0 : (tc>fc?1:-1);
+    const dr = tr===fr ? 0 : (tr>fr?1:-1);
+    // 출발지~도착지 사이 기물 탐색
+    let c=fc+dc, r=fr+dr;
+    while(c!==tc||r!==tr){
+      if(board[r][c]){ locustTarget={col:c,row:r}; break; }
+      c+=dc; r+=dr;
+    }
+    if(locustTarget){ captured=board[locustTarget.row][locustTarget.col]; board[locustTarget.row][locustTarget.col]=null; }
+  }
+
+  board[tr][tc] = piece;
+  board[fr][fc] = null;
+
+  logMove(fc, fr, tc, tr, piece.type, turn);
+
+  // 승격 체크
+  if(piece.type==='pawn'){
+    const promRow = piece.color==='W' ? 9 : 0;
+    if(tr === promRow){
+      promotionPending = {col:tc, row:tr, color:piece.color};
+      turn = turn==='W'?'B':'W';
+      showPromotionModal(piece.color);
+      render();
+      return;
+    }
+  }
+
+  turn = turn==='W'?'B':'W';
+  updateCampCount();
+  checkEndgame();
+  render();
+  if(!gameOver) setTimeout(triggerAI, 100);
+}
+
+function showPromotionModal(color) {
+  const modal = document.getElementById('promotion-modal');
+  const choices = document.getElementById('promo-choices');
+  choices.innerHTML = '';
+  for(const t of ['queen','rook','bishop','knight']){
+    const btn = document.createElement('button');
+    btn.className = 'promo-btn';
+    btn.textContent = GLYPHS[color][t];
+    btn.onclick = () => {
+      board[promotionPending.row][promotionPending.col].type = t;
+      promotionPending = null;
+      modal.classList.remove('show');
+      updateCampCount();
+      checkEndgame();
+      render();
+      if(!gameOver) setTimeout(triggerAI, 100);
+    };
+    choices.appendChild(btn);
+  }
+  modal.classList.add('show');
+}
+
+function updateCampCount() {
+  // turn은 이미 넘어간 상태. mover = 방금 수를 둔 쪽, target = 다음 수를 둘 쪽.
+  const mover = turn==='W'?'B':'W';
+  const target = turn;
+
+  // mover 킹 처리
+  const kpMover = findKing(mover, board);
+  if(kpMover){
+    const onLand = isLand(kpMover.col, kpMover.row);
+    const inCheck = isInCheck(mover, board);
+
+    // needsSea 플래그 해제: 바다 칸을 밟으면 해제
+    if(!onLand && campNeedsSea[mover]){
+      campNeedsSea[mover] = false;
+    }
+
+    if(onLand && !inCheck && !campNeedsSea[mover]){
+      campCount[mover]++;
+      if(campCount[mover] >= 3){
+        gameOver = true;
+        setStatus(`🏝️ ${mover==='W'?'백':'흑'}이 섬의 지배자로 승리!`);
+        return;
+      }
+    } else if(inCheck){
+      // 체크 당하면 카운트 리셋, 육지에서 체크당한 경우에만 바다 귀환 플래그 세팅
+      campCount[mover] = 0;
+      if(onLand) campNeedsSea[mover] = true;
+    } else if(!onLand){
+      // 육지 밖(바다)이고 체크 아님: 카운트 리셋
+      campCount[mover] = 0;
+    }
+    // onLand && !inCheck && campNeedsSea=true: 바다 안 거쳤으므로 카운트 증가 없음
+  }
+
+  // target 킹이 체크 상태면 즉시 처리
+  const kpTarget = findKing(target, board);
+  if(kpTarget && isInCheck(target, board)){
+    campCount[target] = 0;
+    // 육지에서 체크당한 경우에만 바다 귀환 플래그 세팅
+    if(isLand(kpTarget.col, kpTarget.row)) campNeedsSea[target] = true;
+  }
+}
+
+function checkEndgame() {
+  if(gameOver) return;
+  const legal = countAllLegalMoves(turn, board);
+  if(legal === 0){
+    if(isInCheck(turn, board)){
+      const w = turn==='W'?'B':'W';
+      gameOver = true;
+      setStatus(`♟️ 체크메이트! ${w==='W'?'백':'흑'} 승리`);
+    } else {
+      gameOver = true;
+      setStatus('스테일메이트 — 무승부');
+    }
+    return;
+  }
+  if(isInCheck(turn, board)){
+    setStatus(`⚠️ ${turn==='W'?'백':'흑'} 체크!`);
+    return;
+  }
+  const mover = turn==='W'?'B':'W';
+  if(campNeedsSea[mover])
+    setStatus(`⚓ ${mover==='W'?'백':'흑'} 바다 귀환 필요`);
+  else if(campCount[mover] > 0)
+    setStatus(`🏝️ ${mover==='W'?'백':'흑'} 섬 점령 카운트: ${campCount[mover]}/3`);
+  else
+    setStatus('');
+}
+
+function undoMove() {
+  if(!history.length) return;
+  const prev = history.pop();
+  board = prev.board; turn = prev.turn; campCount = prev.campCount; campNeedsSea = prev.campNeedsSea;
+  moveCount = prev.moveCount; moveLog = prev.moveLog;
+  gameOver = false; selected = null; promotionPending = null;
+  document.getElementById('promotion-modal').classList.remove('show');
+  renderLog(); setStatus(''); render();
+}
+
+function findKing(color, b){
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(b[r][c]&&b[r][c].color===color&&b[r][c].type==='king') return {col:c,row:r};
+  return null;
+}
+
+function isInCheck(color, b){
+  const kp = findKing(color, b);
+  if(!kp) return false;
+  const enemy = color==='W'?'B':'W';
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(b[r][c]&&b[r][c].color===enemy){
+      const mv = getRawMoves(c,r,b,enemy);
+      if(mv.some(m=>m.col===kp.col&&m.row===kp.row)) return true;
+    }
+  return false;
+}
+
+function getLegalMoves(col, row, b, color){
+  return getRawMoves(col,row,b,color).filter(m=>{
+    const nb = JSON.parse(JSON.stringify(b));
+    nb[m.row][m.col] = nb[row][col];
+    nb[row][col] = null;
+    return !isInCheck(color, nb);
+  });
+}
+
+function countAllLegalMoves(color, b){
+  let n=0;
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(b[r][c]&&b[r][c].color===color) n+=getLegalMoves(c,r,b,color).length;
+  return n;
+}
+
+function inBounds(c,r){ return c>=0&&c<10&&r>=0&&r<10; }
+
+function getRawMoves(col, row, b, color){
+  const piece = b[row][col];
+  if(!piece) return [];
+  const enemy = color==='W'?'B':'W';
+  const land = isLand(col, row);
+  const moves = [];
+
+  function addEmpty(c,r){ if(inBounds(c,r)&&!b[r][c]) moves.push({col:c,row:r}); }
+  function addCapture(c,r){ if(inBounds(c,r)&&b[r][c]&&b[r][c].color===enemy) moves.push({col:c,row:r}); }
+  function addFree(c,r){ if(inBounds(c,r)&&(!b[r][c]||b[r][c].color===enemy)) moves.push({col:c,row:r}); }
+
+  const t = piece.type;
+
+  if(t==='king'){
+    for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++)
+      if(dc||dr) addFree(col+dc,row+dr);
+  }
+
+  else if(t==='pawn'){
+    // 백: row 증가(위쪽), 흑: row 감소(아래쪽)
+    const dir = color==='W' ? 1 : -1;
+    if(!land){
+      // 바다: 앞 3방향 이동(비캡처), 앞 대각 2방향 캡처
+      addEmpty(col,     row+dir);
+      addEmpty(col+1,   row+dir);
+      addEmpty(col-1,   row+dir);
+      addCapture(col+1, row+dir);
+      addCapture(col-1, row+dir);
+    } else {
+      // 육지: 은장 5방향 (앞3 + 뒤대각2) 이동+캡처
+      for(const [dc,dr] of [[0,dir],[1,dir],[-1,dir],[1,-dir],[-1,-dir]])
+        addFree(col+dc, row+dr);
+    }
+  }
+
+  else if(t==='rook'){
+    if(!land) slideRook(col,row,b,color,moves);
+    else for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]) addFree(col+dc,row+dr);
+  }
+
+  else if(t==='bishop'){
+    if(!land) movesHarpooner(col,row,b,color,moves);
+    else slideBishop(col,row,b,color,moves);
+  }
+
+  else if(t==='queen'){
+    if(!land){ slideRook(col,row,b,color,moves); slideBishop(col,row,b,color,moves); }
+    else for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++) if(dc||dr) addFree(col+dc,row+dr);
+  }
+
+  else if(t==='knight'){
+    for(const[dc,dr] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]])
+      addFree(col+dc,row+dr);
+  }
+
+  else if(t==='cannon'){
+    if(!land) movesCannon(col,row,b,color,moves);
+    else slideRook(col,row,b,color,moves);
+  }
+
+  return moves;
+}
+
+function slideRook(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    let c=col+dc, r=row+dr;
+    while(inBounds(c,r)){
+      if(b[r][c]){ if(b[r][c].color===enemy) moves.push({col:c,row:r}); break; }
+      moves.push({col:c,row:r}); c+=dc; r+=dr;
+    }
+  }
+}
+
+function slideBishop(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  for(const[dc,dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+    let c=col+dc, r=row+dr;
+    while(inBounds(c,r)){
+      if(b[r][c]){ if(b[r][c].color===enemy) moves.push({col:c,row:r}); break; }
+      moves.push({col:c,row:r}); c+=dc; r+=dr;
+    }
+  }
+}
+
+function movesHarpooner(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  // 1. Mann: 8방향 1칸 이동+캡처
+  for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++){
+    if(!dc&&!dr) continue;
+    const nc=col+dc, nr=row+dr;
+    if(inBounds(nc,nr)&&(!b[nr][nc]||b[nr][nc].color===enemy))
+      moves.push({col:nc,row:nr});
+  }
+  // 2. 대각 방향 작살: 적 = 비숍 캡처, 아군 = 직전 칸까지 슬라이드
+  for(const[dc,dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+    let c=col+dc, r=row+dr;
+    let prev_c=col, prev_r=row;
+    while(inBounds(c,r)){
+      if(b[r][c]){
+        if(b[r][c].color===enemy){
+          // 적: 비숍 캡처
+          moves.push({col:c,row:r});
+        } else {
+          // 아군: 직전 칸까지 슬라이드 (직전이 출발지가 아닐 때만)
+          if(prev_c!==col||prev_r!==row){
+            if(!moves.some(m=>m.col===prev_c&&m.row===prev_r))
+              moves.push({col:prev_c,row:prev_r});
+          }
+        }
+        break;
+      }
+      prev_c=c; prev_r=r;
+      c+=dc; r+=dr;
+    }
+  }
+}
+
+function movesCannon(col,row,b,color,moves){
+  const enemy=color==='W'?'B':'W';
+  for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    // 이동: 빈 칸만
+    let c=col+dc, r=row+dr;
+    while(inBounds(c,r)){
+      if(b[r][c]) break;
+      moves.push({col:c,row:r});
+      c+=dc; r+=dr;
+    }
+    // 로커스트: 첫 번째 만난 기물이 적이면, 그 뒤 빈 칸에 착지하며 제거
+    if(inBounds(c,r)&&b[r][c]&&b[r][c].color===enemy){
+      const lc=c+dc, lr=r+dr;
+      if(inBounds(lc,lr)&&!b[lr][lc]) moves.push({col:lc,row:lr});
+    }
+  }
+}
+
+resetGame();
+</script>
+</body>
+</html>

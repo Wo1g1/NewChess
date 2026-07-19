@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demotion Chess</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+  :root {
+    --light: #e8d5b0; --dark: #7a4a2a; --board-border: #2a1005;
+    --accent: #c9a84c; --text: #e8d5b0;
+    --highlight: rgba(255,220,50,0.5);
+    --valid: rgba(60,180,60,0.35); --capture: rgba(200,50,50,0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1c0e05;
+    background-image: radial-gradient(ellipse at 50% 0%, #3a1a08 0%, #1c0e05 70%);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'Crimson Text', serif; color: var(--text); padding: 20px;
+  }
+  h1 { font-family:'Cinzel',serif; font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); text-shadow:0 0 30px rgba(201,168,76,.4); margin-bottom:4px; }
+  .subtitle { font-style:italic; font-size:1rem; color:#a07848; margin-bottom:16px; letter-spacing:.05em; }
+  .game-wrap { display:flex; gap:28px; align-items:flex-start; }
+  .board-wrap { display:flex; flex-direction:column; align-items:center; }
+  .coords-row { display:flex; margin-bottom:4px; padding-left:28px; }
+  .coord-label { text-align:center; font-family:'Cinzel',serif; font-size:.75rem; color:#8a6030; }
+  .rank-label { width:24px; text-align:center; font-family:'Cinzel',serif; font-size:.75rem; color:#8a6030; }
+  #board { display:grid; border:3px solid var(--board-border); box-shadow:0 0 40px rgba(0,0,0,.8); }
+  .cell { display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
+  .cell.light { background:var(--light); } .cell.dark { background:var(--dark); }
+  .cell.selected { background:var(--highlight) !important; }
+  .cell.valid-move::after { content:''; position:absolute; width:28px; height:28px; border-radius:50%; background:var(--valid); border:2px solid rgba(60,180,60,.6); }
+  .cell.valid-capture { background:var(--capture) !important; }
+  .piece { font-size:52px; line-height:1; user-select:none; pointer-events:none; position:relative; z-index:1; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+  .piece.demoted { transform:scaleY(-1); }
+  .piece.white { color:#fff; text-shadow:0 1px 3px #000,0 0 8px rgba(255,255,255,.3); }
+  .piece.black { color:#1a0a00; text-shadow:0 1px 2px rgba(255,255,255,.2); }
+  .captured-piece { font-size:20px; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+  .captured-piece.white { color:#fff; text-shadow:0 1px 2px #000; }
+  .captured-piece.black { color:#1a0a00; text-shadow:0 1px 1px rgba(255,255,255,.2); }
+  .captured-piece.demoted { display:inline-block; transform:scaleY(-1); }
+  /* sidebar */
+  .sidebar { width:220px; display:flex; flex-direction:column; gap:10px; }
+  /* version toggle */
+  .version-toggle { display:flex; border:1px solid #3a2010; border-radius:4px; overflow:hidden; }
+  .version-btn { flex:1; font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.08em; padding:7px 4px; background:transparent; border:none; color:#806040; cursor:pointer; transition:background .15s,color .15s; }
+  .version-btn.active { background:rgba(201,168,76,.18); color:var(--accent); }
+  .version-btn:first-child { border-right:1px solid #3a2010; }
+  .panel { background:rgba(255,255,255,.04); border:1px solid #3a2010; border-radius:4px; padding:7px 14px; }
+  .panel h3 { font-family:'Cinzel',serif; font-size:.75rem; letter-spacing:.1em; color:var(--accent); margin-bottom:8px; text-transform:uppercase; }
+  #turn-display { font-family:'Cinzel',serif; font-size:1rem; font-weight:600; color:var(--text); text-align:center; }
+  #status-msg { font-style:italic; font-size:.85rem; color:#c09060; text-align:center; }
+  #log { font-size:.82rem; color:#a08060; line-height:1.7; max-height:180px; overflow-y:auto; word-break:break-all; }
+  #log::-webkit-scrollbar { width:4px; } #log::-webkit-scrollbar-track { background:transparent; } #log::-webkit-scrollbar-thumb { background:#4a2a10; border-radius:2px; }
+  .log-num { color:var(--accent); font-weight:600; }
+  .log-check { color:#f0c040; font-weight:600; }
+  .log-demotion { color:#e05050; }
+  .log-result { color:#e8d5b0; font-weight:600; display:block; margin-top:4px; }
+  .legend-item { display:flex; align-items:center; gap:6px; margin-bottom:5px; font-size:.8rem; color:#a08060; }
+  .legend-piece { font-size:20px; width:24px; text-align:center; filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+  .legend-piece.demoted { display:inline-block; transform:scaleY(-1); }
+  button { font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.08em; background:transparent; border:1px solid #5a3a18; color:var(--accent); padding:7px 14px; cursor:pointer; border-radius:2px; transition:background .15s,border-color .15s; width:100%; margin-top:2px; }
+  button:hover { background:rgba(201,168,76,.1); border-color:var(--accent); }
+  #promotion-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100; align-items:center; justify-content:center; }
+  #promotion-modal.active { display:flex; }
+  .promo-box { background:#2a1508; border:2px solid var(--accent); border-radius:4px; padding:24px; text-align:center; }
+  .promo-box h2 { font-family:'Cinzel',serif; color:var(--accent); margin-bottom:16px; font-size:1rem; letter-spacing:.1em; }
+  .promo-options { display:flex; gap:12px; justify-content:center; }
+  .promo-option { width:70px; height:70px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid #5a3a18; border-radius:4px; cursor:pointer; transition:background .15s; background:transparent; color:var(--text); gap:4px; }
+  .promo-option:hover { background:rgba(201,168,76,.15); border-color:var(--accent); }
+  .promo-option span:first-child { font-size:36px; filter:drop-shadow(0 1px 2px #000); }
+  .promo-option span:last-child { font-size:.65rem; font-family:'Cinzel',serif; color:var(--accent); }
+</style>
+</head>
+<body>
+<h1>DEMOTION CHESS</h1>
+<p class="subtitle">기물을 잡으면 강급당한다</p>
+
+<div class="game-wrap">
+  <div class="board-wrap">
+    <div class="coords-row" id="file-labels"></div>
+    <div style="display:flex">
+      <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
+      <div id="board"></div>
+    </div>
+    <div style="display:flex;margin-top:6px;" id="captured-wrap">
+      <div style="width:24px;flex-shrink:0;"></div>
+      <div id="captured-box" style="display:flex;align-items:center;justify-content:space-between;min-height:30px;padding:3px 8px;background:rgba(235,220,185,.30);border-radius:3px;">
+        <div id="captured-black" style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;"></div>
+        <div id="captured-white" style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:flex-end;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <!-- 버전 전환 -->
+    <div class="version-toggle">
+      <button class="version-btn active" id="btn-basic" onclick="switchVersion('basic')">기본 (6×6)</button>
+      <button class="version-btn" id="btn-extended" onclick="switchVersion('extended')">확장 (8×8)</button>
+    </div>
+
+    <div class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+      <div id="turn-display">백의 차례</div>
+      <div id="status-msg"></div>
+    </div>
+
+    <div class="panel" id="legend-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h3 style="margin-bottom:0;">강급 규칙</h3>
+        <button onclick="openInfoModal()" style="width:22px;height:22px;padding:0;font-size:1rem;line-height:1;border-radius:50%;margin:0;flex-shrink:0;">+</button>
+      </div>
+      <div id="legend-content"></div>
+    </div>
+
+    <div class="panel" id="opening-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <h3 style="margin-bottom:0;">오프닝</h3>
+        <button id="opening-info-btn" onclick="openOpeningModal()" style="width:22px;height:22px;padding:0;font-size:1rem;line-height:1;border-radius:50%;margin:0;flex-shrink:0;">+</button>
+      </div>
+      <div id="opening-name" style="font-size:.85rem;color:#c9a84c;font-style:italic;min-height:1.2em;">—</div>
+    </div>
+
+    <div class="panel">
+      <h3>기보</h3>
+      <div id="log"></div>
+    </div>
+
+    <button onclick="undoMove()">무르기 (Undo)</button>
+    <button onclick="resetGame()">새 게임</button>
+  </div>
+</div>
+
+<div id="promotion-modal">
+  <div class="promo-box">
+    <h2>승급 선택</h2>
+    <div class="promo-options" id="promo-options"></div>
+  </div>
+</div>
+
+<!-- 오프닝 모달 -->
+<div id="opening-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px;">
+  <div style="background:#1e0e05;border:2px solid #c9a84c;border-radius:6px;width:100%;max-width:720px;padding:24px;position:relative;font-family:'Crimson Text',serif;color:#e8d5b0;">
+    <button onclick="closeOpeningModal()" style="position:absolute;top:10px;right:12px;width:28px;height:28px;padding:0;font-size:1.1rem;border-radius:50%;margin:0;">✕</button>
+    <h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:#c9a84c;margin-bottom:16px;">오프닝 목록</h2>
+    <div id="opening-modal-content"></div>
+  </div>
+</div>
+<div id="info-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px;">
+  <div style="background:#1e0e05;border:2px solid #c9a84c;border-radius:6px;width:100%;max-width:680px;padding:24px;position:relative;font-family:'Crimson Text',serif;color:#e8d5b0;">
+    <button onclick="closeInfoModal()" style="position:absolute;top:10px;right:12px;width:28px;height:28px;padding:0;font-size:1.1rem;border-radius:50%;margin:0;">✕</button>
+    <div id="info-content"></div>
+  </div>
+</div>
+
+<script>
+// ── 버전 관리 ─────────────────────────────────────────────────────────────
+let currentVersion = 'basic'; // 'basic' | 'extended'
+const CELL_SIZE = { basic: 80, extended: 60 };
+const BOARD_SIZE = { basic: 6, extended: 8 };
+
+function switchVersion(v) {
+  if(currentVersion === v) return;
+  currentVersion = v;
+  document.getElementById('btn-basic').classList.toggle('active', v==='basic');
+  document.getElementById('btn-extended').classList.toggle('active', v==='extended');
+  document.getElementById('opening-info-btn').style.display = v==='basic' ? '' : 'none';
+  resetGame();
+  renderLegend();
+}
+
+function getBoardSize() { return BOARD_SIZE[currentVersion]; }
+function getCellSize() { return CELL_SIZE[currentVersion]; }
+
+// ── 상태 ──────────────────────────────────────────────────────────────────
+let board = [];
+let turn = 'w';
+let selected = null;
+let validMoves = [];
+let pendingPromotion = null;
+let moveCount = 1;
+let history = [];
+let capturedByWhite = [];
+let capturedByBlack = [];
+let gameOver = false;
+let moveHistory = [];
+let currentOpening = '—';
+let enPassantTarget = null; // {r, c} 앙파상 가능한 목적 칸 (확장 버전만)
+
+// ── 오프닝 (6×6 전용) ────────────────────────────────────────────────────
+function boardKey(b) {
+  return b.map(row => row.map(cell => cell ? cell.color[0]+cell.type : '.').join('')).join('/');
+}
+
+function makeKey(moves) {
+  const b = Array(6).fill(null).map(() => Array(6).fill(null));
+  b[0] = [{type:'R',color:'b'},{type:'N',color:'b'},{type:'K',color:'b'},{type:'Q',color:'b'},{type:'N',color:'b'},{type:'R',color:'b'}];
+  b[1] = Array(6).fill(null).map(()=>({type:'P',color:'b'}));
+  b[5] = [{type:'R',color:'w'},{type:'N',color:'w'},{type:'K',color:'w'},{type:'Q',color:'w'},{type:'N',color:'w'},{type:'R',color:'w'}];
+  b[4] = Array(6).fill(null).map(()=>({type:'P',color:'w'}));
+  const files='abcdef';
+  for(const mv of moves) {
+    const clean=mv.replace(/^[KQRNMWB]/,'').replace(/[×↓+]/g,'').toLowerCase();
+    const fc=files.indexOf(clean[0]),fr=6-parseInt(clean[1]);
+    const tc=files.indexOf(clean[2]),tr=6-parseInt(clean[3]);
+    if(fc<0||fr<0||tc<0||tr<0) continue;
+    const piece=b[fr][fc]; if(!piece) continue;
+    const cap=b[tr][tc]; let moved={...piece};
+    if(cap&&cap.type!=='P'){
+      const dm={Q:'Mann',R:'Wazir',N:'P',Mann:'Mann',Wazir:'Wazir',K:'K'};
+      const nt=dm[piece.type]??piece.type;
+      if(nt!==piece.type) moved={...piece,type:nt,originalType:piece.type};
+    }
+    b[fr][fc]=null; b[tr][tc]=moved;
+  }
+  return boardKey(b);
+}
+
+const OPENINGS = [
+  [makeKey(['d2d3']),'베리어 오프닝'],
+  [makeKey(['c2c3']),'킹 프론트 피앙케토 오프닝'],
+  [makeKey(['e2e3']),'퀸 사이드 피앙케토 오프닝'],
+  [makeKey(['d2d3','c5c4']),'베리어 카운터 갬빗'],
+  [makeKey(['d2d3','c5c4','c2c3']),'킹즈 센터 갬빗'],
+  [makeKey(['c2c3','c5c4','d2d3']),'킹즈 센터 갬빗'],
+  [makeKey(['d2d3','c5c4','e2e3']),'피앙케토 어택'],
+  [makeKey(['e2e3','c5c4','d2d3']),'피앙케토 어택'],
+  [makeKey(['c2c3','c5c4','d2d3','d5d4']),'센터게임'],
+  [makeKey(['d2d3','c5c4','c2c3','d5d4']),'센터게임'],
+  [makeKey(['c2c3','d5d4','d2d3','c5c4']),'센터게임'],
+  [makeKey(['d2d3','d5d4','c2c3','c5c4']),'센터게임'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3']),'피앙케토 어택'],
+  [makeKey(['e2e3','c5c4','d2d3','c4d3']),'피앙케토 어택'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3','c2d3','d6c5']),'피앙케토 어택 올드 베리에이션'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4']),'피앙케토 어택 메인 라인'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4']),'피앙케토 어택 메인 라인'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6c5']),'피앙케토 어택 메인 라인 나이트 베리에이션'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6c5']),'피앙케토 어택 메인 라인 퀸 베리에이션'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6f4','e3f4','e6f4']),'나이트 어택'],
+  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6f4','e3f4','d6f4']),'액셀러레이티드 퀸 어택'],
+  [makeKey(['d2d3','c5c4','d3c4']),'베리어 카운터 갬빗 수락'],
+  [makeKey(['d2d3','c5c4','d3c4','b5c4']),'베리어 카운터 갬빗 수락'],
+  [makeKey(['d2d3','c5c4','d3c4','d5c4']),'베리어 카운터 갬빗 수락'],
+  [makeKey(['d2d3','c5c4','d3c4','b5c4','b1c3','d6c5']),'베리어 카운터 갬빗 수락 메인 라인'],
+  [makeKey(['d2d3','c5c4','d3c4','d5c4','b1c3','d6c5']),'베리어 카운터 갬빗 수락 오픈 베리에이션'],
+  [makeKey(['d2d3','c5c4','d3c4','b5c4','c2c3','d6c5']),'베리어 카운터 갬빗 수락 폰 베리에이션'],
+  [makeKey(['d2d3','c5c4','d3c4','d5c4','c2c3','d6c5']),'베리어 카운터 갬빗 수락 슬로우 베리에이션'],
+  [makeKey(['d2d3','c5c4','d3c4','b5c4','c2c3','d5d4']),'센터 더블 갬빗'],
+  [makeKey(['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4']),'오픈 더블 갬빗'],
+  [makeKey(['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4','c3b4','d6b4']),'오픈 더블 갬빗 수락'],
+];
+const OPENING_MAP = new Map(OPENINGS);
+
+function updateOpening() {
+  if(currentVersion!=='basic') return;
+  const key = boardKey(board);
+  const matched = OPENING_MAP.get(key);
+  if(matched) currentOpening = matched;
+  document.getElementById('opening-name').textContent = currentOpening;
+}
+
+function resetOpening() {
+  moveHistory=[]; currentOpening='—';
+  document.getElementById('opening-name').textContent='—';
+}
+
+// ── 초기화 ────────────────────────────────────────────────────────────────
+function initBoard() {
+  const S = getBoardSize();
+  board = Array(S).fill(null).map(()=>Array(S).fill(null));
+  if(currentVersion==='basic') {
+    board[0]=[{type:'R',color:'b'},{type:'N',color:'b'},{type:'K',color:'b'},{type:'Q',color:'b'},{type:'N',color:'b'},{type:'R',color:'b'}];
+    board[1]=Array(6).fill(null).map(()=>({type:'P',color:'b'}));
+    board[5]=[{type:'R',color:'w'},{type:'N',color:'w'},{type:'K',color:'w'},{type:'Q',color:'w'},{type:'N',color:'w'},{type:'R',color:'w'}];
+    board[4]=Array(6).fill(null).map(()=>({type:'P',color:'w'}));
+  } else {
+    // 8×8: rnbqkbnr → b 자리에 포(C) 배치
+    // r n C q k C n r
+    board[0]=[{type:'R',color:'b'},{type:'N',color:'b'},{type:'C',color:'b'},{type:'K',color:'b'},{type:'Q',color:'b'},{type:'C',color:'b'},{type:'N',color:'b'},{type:'R',color:'b'}];
+    board[1]=Array(8).fill(null).map(()=>({type:'P',color:'b'}));
+    board[7]=[{type:'R',color:'w'},{type:'N',color:'w'},{type:'C',color:'w'},{type:'K',color:'w'},{type:'Q',color:'w'},{type:'C',color:'w'},{type:'N',color:'w'},{type:'R',color:'w'}];
+    board[6]=Array(8).fill(null).map(()=>({type:'P',color:'w'}));
+  }
+}
+
+// ── 행마 ──────────────────────────────────────────────────────────────────
+function inBounds(r,c) { const S=getBoardSize(); return r>=0&&r<S&&c>=0&&c<S; }
+
+function getMoves(r,c,onlyCaptures=false) {
+  const piece=board[r][c]; if(!piece) return [];
+  const {type,color}=piece;
+  const moves=[]; const enemy=color==='w'?'b':'w';
+  const dir=color==='w'?-1:1;
+  const S=getBoardSize();
+
+  const slide=(dr,dc,maxDist=S)=>{
+    for(let i=1;i<=maxDist;i++){
+      const nr=r+dr*i,nc=c+dc*i;
+      if(!inBounds(nr,nc)) break;
+      if(board[nr][nc]){ if(board[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true}); break; }
+      if(!onlyCaptures) moves.push({r:nr,c:nc,capture:false});
+    }
+  };
+  const jump=(dr,dc)=>{
+    const nr=r+dr,nc=c+dc;
+    if(!inBounds(nr,nc)) return;
+    if(board[nr][nc]){ if(board[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true}); }
+    else if(!onlyCaptures) moves.push({r:nr,c:nc,capture:false});
+  };
+
+  switch(type){
+    case 'P':{
+      const nr=r+dir;
+      if(!onlyCaptures&&inBounds(nr,c)&&!board[nr][c]){
+        moves.push({r:nr,c,capture:false});
+        // 확장 버전: 2칸 전진 (초기 위치에서만)
+        if(currentVersion==='extended'){
+          const startRank=color==='w'?6:1;
+          const nr2=r+dir*2;
+          if(r===startRank&&inBounds(nr2,c)&&!board[nr2][c])
+            moves.push({r:nr2,c,capture:false,doubleStep:true});
+        }
+      }
+      [-1,1].forEach(dc=>{
+        const nr2=r+dir,nc2=c+dc;
+        if(inBounds(nr2,nc2)&&board[nr2][nc2]?.color===enemy) moves.push({r:nr2,c:nc2,capture:true});
+        // 앙파상 (확장 버전만)
+        if(currentVersion==='extended'&&enPassantTarget&&nr2===enPassantTarget.r&&nc2===enPassantTarget.c&&!board[nr2][nc2])
+          moves.push({r:nr2,c:nc2,capture:true,enPassant:true,capturedAt:{r:r,c:nc2}});
+      });
+      break;
+    }
+    case 'R': [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>slide(dr,dc)); break;
+    case 'Q': // 용마: 비숍 슬라이드 + 와지르
+      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>slide(dr,dc));
+      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>jump(dr,dc));
+      break;
+    case 'N':
+      [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+        const nr=r+dr,nc=c+dc; if(!inBounds(nr,nc)) return;
+        if(board[nr][nc]){if(board[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true});}
+        else if(!onlyCaptures) moves.push({r:nr,c:nc,capture:false});
+      });
+      break;
+    case 'K': case 'Mann':
+      [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>jump(dr,dc));
+      break;
+    case 'Wazir': [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>jump(dr,dc)); break;
+    case 'C': // 포: 8방향 슬라이드 이동(캡처 불가), 별도 캡처 로직
+      if(!onlyCaptures){
+        // 이동 전용 슬라이드: 기물 만나면 정지, 캡처 없음
+        [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{
+          for(let i=1;i<S;i++){
+            const nr=r+dr*i,nc=c+dc*i;
+            if(!inBounds(nr,nc)) break;
+            if(board[nr][nc]) break; // 아군/상대 모두 이동 불가, 캡처도 안 함
+            moves.push({r:nr,c:nc,capture:false});
+          }
+        });
+      }
+      // 캡처: 경로 완전히 비어있을 때만 상대 기물 너머 1칸 착지
+      ;[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{
+        for(let i=1;i<S;i++){
+          const nr=r+dr*i,nc=c+dc*i;
+          if(!inBounds(nr,nc)) break;
+          if(board[nr][nc]){
+            if(board[nr][nc].color===enemy){
+              const lr=nr+dr,lc=nc+dc;
+              if(inBounds(lr,lc)&&!board[lr][lc]) moves.push({r:lr,c:lc,capture:true,capturedAt:{r:nr,c:nc}});
+            }
+            break;
+          }
+        }
+      });
+      break;
+    case 'FC': // 고정 포탑(포 강급): 이동 불가, 캡처만
+      ;[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{
+        for(let i=1;i<S;i++){
+          const nr=r+dr*i,nc=c+dc*i;
+          if(!inBounds(nr,nc)) break;
+          if(board[nr][nc]){
+            if(board[nr][nc].color===enemy){
+              const lr=nr+dr,lc=nc+dc;
+              if(inBounds(lr,lc)&&!board[lr][lc]) moves.push({r:lr,c:lc,capture:true,capturedAt:{r:nr,c:nc}});
+            }
+            break;
+          }
+        }
+      });
+      break;
+  }
+  return moves;
+}
+
+function isInCheck(color) {
+  const S=getBoardSize(); let kr=-1,kc=-1;
+  for(let r=0;r<S;r++) for(let c=0;c<S;c++)
+    if(board[r][c]?.type==='K'&&board[r][c]?.color===color){kr=r;kc=c;}
+  if(kr<0) return false;
+  const enemy=color==='w'?'b':'w';
+  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
+    if(board[r][c]?.color!==enemy) continue;
+    const ms=getMoves(r,c,true);
+    for(const m of ms){
+      // 포 캡처: 실제 잡히는 기물은 capturedAt
+      if(m.capturedAt){
+        if(m.capturedAt.r===kr&&m.capturedAt.c===kc) return true;
+      } else {
+        if(m.r===kr&&m.c===kc) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function getLegalMoves(r,c) {
+  const piece=board[r][c]; if(!piece) return [];
+  return getMoves(r,c).filter(mv=>{
+    const saved=board[mv.r][mv.c];
+    const movedPiece=getActualDemotion(piece,mv);
+    // 포 캡처: 실제 잡힌 기물은 capturedAt
+    let savedAt=null;
+    if(mv.capturedAt){savedAt=board[mv.capturedAt.r][mv.capturedAt.c]; board[mv.capturedAt.r][mv.capturedAt.c]=null;}
+    board[r][c]=null; board[mv.r][mv.c]=movedPiece;
+    const check=isInCheck(piece.color);
+    board[r][c]=piece; board[mv.r][mv.c]=saved;
+    if(mv.capturedAt) board[mv.capturedAt.r][mv.capturedAt.c]=savedAt;
+    return !check;
+  });
+}
+
+function getDemotionMap() {
+  if(currentVersion==='basic')
+    return {Q:'Mann',R:'Wazir',N:'P',Mann:'Mann',Wazir:'Wazir',K:'K'};
+  else
+    return {Q:'Mann',R:'Wazir',N:'P',C:'FC',Mann:'Mann',Wazir:'Wazir',FC:'FC',K:'K'};
+}
+
+function getActualDemotion(piece,mv) {
+  if(!mv.capture) return {...piece};
+  // 포 캡처: capturedAt의 기물이 잡힌 대상
+  const capturedPiece = mv.capturedAt ? board[mv.capturedAt.r][mv.capturedAt.c] : board[mv.r][mv.c];
+  if(!capturedPiece) return {...piece};
+  if(capturedPiece.type==='P') return {...piece};
+  const dm=getDemotionMap();
+  const newType=dm[piece.type]??piece.type;
+  if(newType===piece.type) return {...piece};
+  return {...piece,type:newType,originalType:piece.type};
+}
+
+function checkPromotion(r,c,piece,fromR,wasDemotion) {
+  if(piece.type!=='P') return false;
+  if(wasDemotion) return false;
+  const S=getBoardSize();
+  const endRank=piece.color==='w'?0:S-1;
+  const dir=piece.color==='w'?-1:1;
+  return r===endRank&&fromR===r-dir;
+}
+
+// ── 기물 표시 ─────────────────────────────────────────────────────────────
+function typeToSym(type,color) {
+  const isW=color==='w';
+  return {K:isW?'♔':'♚',Q:isW?'♕':'♛',R:isW?'♖':'♜',N:isW?'♘':'♞',P:isW?'♙':'♟',
+          Mann:isW?'♕':'♛',Wazir:isW?'♖':'♜',
+          C:isW?'♗':'♝',FC:isW?'♗':'♝'}[type]||'?';
+}
+function isDemotedType(type){return type==='Mann'||type==='Wazir'||type==='FC';}
+
+// ── 렌더 ──────────────────────────────────────────────────────────────────
+function renderBoard() {
+  const S=getBoardSize(); const CS=getCellSize();
+  const boardEl=document.getElementById('board');
+  boardEl.style.gridTemplateColumns=`repeat(${S},${CS}px)`;
+  boardEl.style.gridTemplateRows=`repeat(${S},${CS}px)`;
+  boardEl.innerHTML='';
+
+  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
+    const cell=document.createElement('div');
+    cell.className='cell '+((r+c)%2===0?'light':'dark');
+    cell.style.cssText=`width:${CS}px;height:${CS}px;`;
+    if(selected?.r===r&&selected?.c===c) cell.classList.add('selected');
+    if(validMoves.some(m=>m.r===r&&m.c===c&&!m.capture)) cell.classList.add('valid-move');
+    if(validMoves.some(m=>m.r===r&&m.c===c&&m.capture)) cell.classList.add('valid-capture');
+    const piece=board[r][c];
+    if(piece){
+      const span=document.createElement('span');
+      span.className='piece '+(piece.color==='w'?'white':'black');
+      span.style.fontSize=CS>70?'52px':'38px';
+      if(isDemotedType(piece.type)) span.classList.add('demoted');
+      span.textContent=typeToSym(piece.type,piece.color);
+      cell.appendChild(span);
+    }
+    cell.addEventListener('click',()=>handleClick(r,c));
+    boardEl.appendChild(cell);
+  }
+
+  // 좌표
+  const fl=document.getElementById('file-labels'); fl.innerHTML='';
+  const files='abcdefgh'.slice(0,S);
+  files.split('').forEach(f=>{
+    const d=document.createElement('div');
+    d.className='coord-label'; d.style.width=CS+'px'; d.textContent=f;
+    fl.appendChild(d);
+  });
+  const rl=document.getElementById('rank-labels'); rl.innerHTML='';
+  for(let r=0;r<S;r++){
+    const d=document.createElement('div');
+    d.className='rank-label';
+    d.style.cssText=`height:${CS}px;display:flex;align-items:center;justify-content:center;`;
+    d.textContent=S-r; rl.appendChild(d);
+  }
+
+  // 잡힌 기물 박스 너비
+  document.getElementById('captured-box').style.width=(S*CS)+'px';
+  renderCaptured();
+}
+
+function renderCaptured() {
+  const bEl=document.getElementById('captured-black');
+  const wEl=document.getElementById('captured-white');
+  bEl.innerHTML=''; wEl.innerHTML='';
+  capturedByWhite.forEach(p=>{
+    const span=document.createElement('span');
+    span.className='captured-piece black';
+    if(isDemotedType(p.type)) span.classList.add('demoted');
+    span.textContent=typeToSym(p.type,p.color); bEl.appendChild(span);
+  });
+  capturedByBlack.forEach(p=>{
+    const span=document.createElement('span');
+    span.className='captured-piece white';
+    if(isDemotedType(p.type)) span.classList.add('demoted');
+    span.textContent=typeToSym(p.type,p.color); wEl.appendChild(span);
+  });
+}
+
+function renderLegend() {
+  const el=document.getElementById('legend-content');
+  if(currentVersion==='basic'){
+    el.innerHTML=`
+      <div class="legend-item"><span class="legend-piece">♕</span><span>→</span><span class="legend-piece demoted">♕</span><span>용마→만</span></div>
+      <div class="legend-item"><span class="legend-piece">♖</span><span>→</span><span class="legend-piece demoted">♖</span><span>룩→와지르</span></div>
+      <div class="legend-item"><span class="legend-piece">♘</span><span>→</span><span class="legend-piece">♙</span><span>나이트→폰</span></div>
+      <div style="font-size:.78rem;color:#806040;margin-top:6px;font-style:italic;">폰 캡처는 강급 없음</div>`;
+  } else {
+    el.innerHTML=`
+      <div class="legend-item"><span class="legend-piece">♕</span><span>→</span><span class="legend-piece demoted">♕</span><span>용마→만</span></div>
+      <div class="legend-item"><span class="legend-piece">♖</span><span>→</span><span class="legend-piece demoted">♖</span><span>룩→와지르</span></div>
+      <div class="legend-item"><span class="legend-piece">♘</span><span>→</span><span class="legend-piece">♙</span><span>나이트→폰</span></div>
+      <div class="legend-item"><span class="legend-piece">♗</span><span>→</span><span class="legend-piece demoted">♗</span><span>포→고정포탑</span></div>
+      <div style="font-size:.78rem;color:#806040;margin-top:6px;font-style:italic;">폰 캡처는 강급 없음</div>`;
+  }
+}
+
+// ── 상태 업데이트 ─────────────────────────────────────────────────────────
+function updateStatus() {
+  if(gameOver) return;
+  const S=getBoardSize();
+  const turnEl=document.getElementById('turn-display');
+  const statusEl=document.getElementById('status-msg');
+  let hasLegal=false;
+  outer: for(let r=0;r<S;r++) for(let c=0;c<S;c++){
+    if(board[r][c]?.color===turn&&getLegalMoves(r,c).length>0){hasLegal=true;break outer;}
+  }
+  if(!hasLegal){
+    gameOver=true;
+    const winner=turn==='w'?'흑':'백'; const loser=turn==='w'?'백':'흑';
+    turnEl.textContent=`${winner} 승리`;
+    if(isInCheck(turn)){
+      statusEl.textContent='체크메이트';
+      appendLog(`<span class="log-result">${winner} 승리 — ${loser} 체크메이트</span>`);
+    } else {
+      statusEl.textContent='스테일메이트';
+      appendLog(`<span class="log-result">${winner} 승리 — ${loser} 스테일메이트</span>`);
+    }
+    return;
+  }
+  turnEl.textContent=turn==='w'?'백의 차례':'흑의 차례';
+  statusEl.textContent=isInCheck(turn)?'체크!':'';
+}
+
+// ── 기보 ──────────────────────────────────────────────────────────────────
+function addMoveToLog(moveText,demoted,isCheck){
+  const log=document.getElementById('log');
+  const isWhite=turn==='b';
+  if(isWhite){
+    const ns=document.createElement('span'); ns.className='log-num'; ns.textContent=`${moveCount}.`;
+    log.appendChild(ns); log.appendChild(document.createTextNode(moveText)); moveCount++;
+  } else { log.appendChild(document.createTextNode(' '+moveText)); }
+  if(demoted){const d=document.createElement('span');d.className='log-demotion';d.textContent='↓';log.appendChild(d);}
+  if(isCheck){const c=document.createElement('span');c.className='log-check';c.textContent='+';log.appendChild(c);}
+  if(!isWhite) log.appendChild(document.createTextNode(' '));
+  log.scrollTop=log.scrollHeight;
+}
+function appendLog(html){
+  const log=document.getElementById('log'); const span=document.createElement('span');
+  span.innerHTML=html; log.appendChild(span); log.scrollTop=log.scrollHeight;
+}
+
+// ── 입력 ──────────────────────────────────────────────────────────────────
+function handleClick(r,c){
+  if(pendingPromotion||gameOver) return;
+  const piece=board[r][c];
+  if(selected){
+    const mv=validMoves.find(m=>m.r===r&&m.c===c);
+    if(mv){executeMove(selected.r,selected.c,mv);selected=null;validMoves=[];return;}
+    if(selected.r===r&&selected.c===c){selected=null;validMoves=[];renderBoard();return;}
+    if(piece?.color===turn){selected={r,c};validMoves=getLegalMoves(r,c);renderBoard();return;}
+    selected=null;validMoves=[];renderBoard();return;
+  }
+  if(piece?.color===turn){selected={r,c};validMoves=getLegalMoves(r,c);renderBoard();}
+}
+
+function executeMove(fr,fc,mv){
+  const piece=board[fr][fc];
+  const S=getBoardSize();
+
+  history.push({
+    board:board.map(row=>row.map(cell=>cell?{...cell}:null)),
+    turn,moveCount,gameOver,
+    capturedByWhite:capturedByWhite.map(p=>({...p})),
+    capturedByBlack:capturedByBlack.map(p=>({...p})),
+    logHTML:document.getElementById('log').innerHTML,
+    moveHistory:[...moveHistory],currentOpening,
+    enPassantTarget,
+  });
+
+  const movedPiece=getActualDemotion(piece,mv);
+  const demoted=movedPiece.type!==piece.type;
+
+  // 잡힌 기물 기록
+  const capturedPiece=mv.capturedAt?board[mv.capturedAt.r][mv.capturedAt.c]:board[mv.r][mv.c];
+  if(capturedPiece){
+    const originalType=capturedPiece.originalType??capturedPiece.type;
+    const rec={...capturedPiece,type:originalType,originalType:undefined};
+    if(piece.color==='w') capturedByWhite.push(rec);
+    else capturedByBlack.push(rec);
+  }
+
+  // 포 캡처: capturedAt 위치 기물 제거
+  if(mv.capturedAt) board[mv.capturedAt.r][mv.capturedAt.c]=null;
+  board[fr][fc]=null;
+  board[mv.r][mv.c]=movedPiece;
+
+  // 앙파상 타깃 설정
+  if(mv.doubleStep && piece.type==='P'){
+    const dir=piece.color==='w'?-1:1;
+    enPassantTarget={r:fr+dir,c:fc};
+  } else {
+    enPassantTarget=null;
+  }
+
+  if(checkPromotion(mv.r,mv.c,movedPiece,fr,demoted)){
+    selected=null;validMoves=[];
+    pendingPromotion={r:mv.r,c:mv.c,piece:movedPiece,fr,fc,mv,demoted};
+    showPromotionModal(movedPiece.color);
+    renderBoard();return;
+  }
+
+  const files='abcdefgh'.slice(0,S);
+  const pieceInitial={'K':'K','Q':'Q','R':'R','N':'N','C':'C','FC':'FC','Mann':'M','Wazir':'W'}[piece.type]??'';
+  const prefix=piece.type==='P'?'':pieceInitial;
+  const moveStr=prefix+files[fc]+(S-fr)+(mv.capture?'×':'')+files[mv.c]+(S-mv.r);
+  turn=turn==='w'?'b':'w';
+  const inCheck=isInCheck(turn);
+  updateOpening();
+  addMoveToLog(moveStr,demoted,inCheck);
+  selected=null;validMoves=[];
+  renderBoard();updateStatus();
+}
+
+function showPromotionModal(color){
+  const opts=currentVersion==='basic'
+    ?[{type:'Q',label:'용마'},{type:'R',label:'룩'},{type:'N',label:'나이트'},{type:'Mann',label:'만'}]
+    :[{type:'Q',label:'용마'},{type:'R',label:'룩'},{type:'N',label:'나이트'},{type:'C',label:'포'}];
+  const container=document.getElementById('promo-options');
+  container.innerHTML='';
+  opts.forEach(opt=>{
+    const btn=document.createElement('button'); btn.className='promo-option';
+    const sym=typeToSym(opt.type,color); const isDem=isDemotedType(opt.type);
+    btn.innerHTML=`<span style="${isDem?'display:inline-block;transform:scaleY(-1)':''}">${sym}</span><span>${opt.label}</span>`;
+    btn.addEventListener('click',()=>{
+      const pp=pendingPromotion;
+      board[pp.r][pp.c]={...board[pp.r][pp.c],type:opt.type};
+      pendingPromotion=null;
+      document.getElementById('promotion-modal').classList.remove('active');
+      const S=getBoardSize(); const files='abcdefgh'.slice(0,S);
+      const pi={'K':'K','Q':'Q','R':'R','N':'N','C':'C','FC':'FC','Mann':'M','Wazir':'W'}[pp.piece.type]??'';
+      const pf=pp.piece.type==='P'?'':pi;
+      const ms=pf+files[pp.fc]+(S-pp.fr)+(pp.mv.capture?'×':'')+files[pp.mv.c]+(S-pp.mv.r)+'='+opt.type;
+      turn=turn==='w'?'b':'w';
+      const inCheck=isInCheck(turn);
+      updateOpening();
+      addMoveToLog(ms,pp.demoted,inCheck);
+      renderBoard();updateStatus();
+    });
+    container.appendChild(btn);
+  });
+  document.getElementById('promotion-modal').classList.add('active');
+}
+
+function undoMove(){
+  if(history.length===0) return;
+  if(pendingPromotion){document.getElementById('promotion-modal').classList.remove('active');pendingPromotion=null;}
+  const prev=history.pop();
+  board=prev.board;turn=prev.turn;moveCount=prev.moveCount;gameOver=prev.gameOver;
+  capturedByWhite=prev.capturedByWhite;capturedByBlack=prev.capturedByBlack;
+  moveHistory=prev.moveHistory;currentOpening=prev.currentOpening;
+  enPassantTarget=prev.enPassantTarget;
+  document.getElementById('log').innerHTML=prev.logHTML;
+  document.getElementById('opening-name').textContent=currentOpening;
+  selected=null;validMoves=[];
+  renderBoard();updateStatus();
+}
+
+function resetGame(){
+  initBoard();
+  turn='w';selected=null;validMoves=[];pendingPromotion=null;
+  moveCount=1;history=[];gameOver=false;
+  capturedByWhite=[];capturedByBlack=[];enPassantTarget=null;
+  document.getElementById('log').innerHTML='';
+  document.getElementById('status-msg').textContent='';
+  resetOpening();
+  renderBoard();updateStatus();
+}
+
+// ── 인포 모달 ─────────────────────────────────────────────────────────────
+function miniBoard(size, highlights) {
+  const cs=28, W=size*cs, H=size*cs;
+  let svg=`<svg width="${W}" height="${H}" style="border:1px solid #5a3010;display:block;margin:6px auto;">`;
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+    const x=c*cs,y=r*cs;
+    svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="${(r+c)%2===0?'#e8d5b0':'#7a4a2a'}"/>`;
+  }
+  for(const h of highlights){
+    const x=h.c*cs,y=h.r*cs;
+    if(h.type==='move') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.28}" fill="rgba(60,180,60,.55)"/>`;
+    else if(h.type==='capture') svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="rgba(200,50,50,.45)"/>`;
+    else if(h.type==='cannon-path') svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="rgba(100,160,255,.25)"/>`;
+    else if(h.type==='cannon-dot') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.2}" fill="rgba(80,140,255,.8)"/>`;
+    else if(h.type==='capture-dot') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.2}" fill="rgba(200,50,50,.9)"/>`;
+    else if(h.type==='cannon-cap') svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="rgba(200,50,50,.55)"/>`;
+    else if(h.type==='cannon-land') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.28}" fill="rgba(255,180,0,.7)"/>`;
+    else if(h.type==='piece'){
+      const isW=h.color==='w';
+      const sym={K:isW?'♔':'♚',Q:isW?'♕':'♛',R:isW?'♖':'♜',N:isW?'♘':'♞',P:isW?'♙':'♟',C:isW?'♗':'♝',FC:isW?'♗':'♝',Mann:isW?'♕':'♛',Wazir:isW?'♖':'♜'}[h.piece]||'?';
+      svg+=`<text x="${x+cs/2}" y="${y+cs*.72}" text-anchor="middle" font-size="${cs*.82}" fill="${isW?'#fff':'#1a0a00'}" style="paint-order:stroke;stroke:${isW?'#000':'rgba(255,255,255,.3)'};stroke-width:1px;">${sym}</text>`;
+    }
+  }
+  return svg+'</svg>';
+}
+
+function isec(title,content){ return `<div style="margin-bottom:18px;"><div style="font-family:'Cinzel',serif;font-size:.9rem;color:#c9a84c;border-bottom:1px solid #3a2010;padding-bottom:4px;margin-bottom:10px;">${title}</div>${content}</div>`; }
+function ip(txt){ return `<p style="font-size:.9rem;line-height:1.6;color:#c8b890;margin-bottom:6px;">${txt}</p>`; }
+function inote(txt){ return `<p style="font-size:.82rem;font-style:italic;color:#906840;margin-bottom:4px;">※ ${txt}</p>`; }
+
+function buildInfoContent() {
+  const isBasic=currentVersion==='basic';
+  let html=`<h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:#c9a84c;margin-bottom:16px;">${isBasic?'기본 버전 (6×6)':'확장 버전 (8×8)'} — 규칙 및 행마</h2>`;
+
+  html+=isec('기본 규칙',
+    ip('두 플레이어가 번갈아 수를 둔다. 상대 킹을 체크메이트하면 승리.') +
+    ip('스테일메이트: 합법 수가 없으나 체크가 아닌 경우, <strong style="color:#e05050;">스테일메이트를 만든 쪽이 승리</strong>한다.') +
+    (isBasic
+      ? ip('폰 2칸 전진 불가. 앙파상 없음. 캐슬링 없음.')
+      : ip('폰 첫 수 2칸 전진 가능. 앙파상 있음. 캐슬링 없음.'))
+  );
+
+  html+=isec('강급 (Demotion)',
+    ip('폰을 제외한 기물을 캡처하면 <strong style="color:#e05050;">캡처한 기물이 강급</strong>된다. 폰 캡처 시 강급 없음.') +
+    `<div style="display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;">` +
+    `<div style="text-align:center;font-size:.78rem;color:#a08060;">용마→만<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'Q',color:'w'},{r:0,c:0,type:'move'},{r:0,c:2,type:'move'},{r:2,c:0,type:'move'},{r:2,c:2,type:'move'},{r:1,c:0,type:'move'},{r:1,c:2,type:'move'},{r:0,c:1,type:'move'},{r:2,c:1,type:'move'}])}</div>` +
+    `<div style="text-align:center;font-size:.78rem;color:#a08060;">룩→와지르<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'R',color:'w'},{r:1,c:0,type:'move'},{r:1,c:2,type:'move'},{r:0,c:1,type:'move'},{r:2,c:1,type:'move'}])}</div>` +
+    `<div style="text-align:center;font-size:.78rem;color:#a08060;">나이트→폰<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'P',color:'w'},{r:0,c:1,type:'cannon-dot'},{r:0,c:0,type:'capture-dot'},{r:0,c:2,type:'capture-dot'}])}</div>` +
+    (!isBasic?`<div style="text-align:center;font-size:.78rem;color:#a08060;">포→고정포탑<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'FC',color:'w'}])}</div>`:'') +
+    `</div>`
+  );
+
+  html+=isec('기물 행마',
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(isBasic?4:5,[{r:isBasic?2:3,c:1,type:'piece',piece:'P',color:'w'},{r:isBasic?1:2,c:1,type:'cannon-dot'},...(isBasic?[]:[{r:1,c:1,type:'cannon-dot'}]),{r:isBasic?1:2,c:0,type:'capture-dot'},{r:isBasic?1:2,c:2,type:'capture-dot'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">폰 (P)</strong><br><span style="font-size:.85rem;color:#c8b890;">전방 1칸 이동, 전방 대각 캡처.${isBasic?'':' 첫 수 2칸 전진 가능, 앙파상 있음.'} 끝 랭크 전진 시 승급.</span></div></div>` +
+
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(5,[{r:2,c:2,type:'piece',piece:'Q',color:'w'},{r:1,c:2,type:'move'},{r:3,c:2,type:'move'},{r:2,c:1,type:'move'},{r:2,c:3,type:'move'},{r:0,c:0,type:'move'},{r:1,c:1,type:'move'},{r:3,c:3,type:'move'},{r:4,c:4,type:'move'},{r:0,c:4,type:'move'},{r:1,c:3,type:'move'},{r:3,c:1,type:'move'},{r:4,c:0,type:'move'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">용마 (Q)</strong><br><span style="font-size:.85rem;color:#c8b890;">대각 슬라이드 + 직선 1칸. 강급 시 만(8방향 1칸).</span></div></div>` +
+
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(5,[{r:2,c:2,type:'piece',piece:'R',color:'w'},{r:0,c:2,type:'move'},{r:1,c:2,type:'move'},{r:3,c:2,type:'move'},{r:4,c:2,type:'move'},{r:2,c:0,type:'move'},{r:2,c:1,type:'move'},{r:2,c:3,type:'move'},{r:2,c:4,type:'move'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">룩 (R)</strong><br><span style="font-size:.85rem;color:#c8b890;">직선 슬라이드. 강급 시 와지르(직선 1칸).</span></div></div>` +
+
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(5,[{r:2,c:2,type:'piece',piece:'N',color:'w'},{r:0,c:1,type:'move'},{r:0,c:3,type:'move'},{r:1,c:0,type:'move'},{r:1,c:4,type:'move'},{r:3,c:0,type:'move'},{r:3,c:4,type:'move'},{r:4,c:1,type:'move'},{r:4,c:3,type:'move'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">나이트 (N)</strong><br><span style="font-size:.85rem;color:#c8b890;">L자 점프. 강급 시 폰.</span></div></div>` +
+
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(3,[{r:1,c:1,type:'piece',piece:'K',color:'w'},{r:0,c:0,type:'move'},{r:0,c:1,type:'move'},{r:0,c:2,type:'move'},{r:1,c:0,type:'move'},{r:1,c:2,type:'move'},{r:2,c:0,type:'move'},{r:2,c:1,type:'move'},{r:2,c:2,type:'move'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">킹 (K)</strong><br><span style="font-size:.85rem;color:#c8b890;">8방향 1칸. 강급 없음.</span></div></div>` +
+
+    (!isBasic?
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(7,[{r:3,c:3,type:'piece',piece:'C',color:'w'},{r:0,c:3,type:'cannon-dot'},{r:1,c:3,type:'cannon-dot'},{r:2,c:3,type:'cannon-dot'},{r:4,c:3,type:'cannon-dot'},{r:5,c:3,type:'cannon-dot'},{r:6,c:3,type:'cannon-dot'},{r:3,c:0,type:'cannon-dot'},{r:3,c:1,type:'cannon-dot'},{r:3,c:2,type:'cannon-dot'},{r:3,c:4,type:'cannon-dot'},{r:3,c:5,type:'cannon-dot'},{r:3,c:6,type:'cannon-dot'},{r:0,c:0,type:'cannon-dot'},{r:1,c:1,type:'cannon-dot'},{r:2,c:2,type:'cannon-dot'},{r:4,c:4,type:'cannon-dot'},{r:5,c:5,type:'cannon-dot'},{r:6,c:6,type:'cannon-dot'},{r:0,c:6,type:'cannon-dot'},{r:1,c:5,type:'cannon-dot'},{r:2,c:4,type:'cannon-dot'},{r:4,c:2,type:'cannon-dot'},{r:5,c:1,type:'cannon-dot'},{r:6,c:0,type:'cannon-dot'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">포 (C) — 이동</strong><br><span style="font-size:.85rem;color:#c8b890;">8방향 슬라이드. 기물 만나면 정지. <strong style="color:#e05050;">이동으로 캡처 불가.</strong></span><br><span style="font-size:.78rem;color:#906840;">파란 점 = 이동 가능 칸</span></div></div>` +
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(7,[{r:6,c:0,type:'piece',piece:'C',color:'w'},{r:5,c:1,type:'cannon-path'},{r:4,c:2,type:'cannon-path'},{r:3,c:3,type:'cannon-path'},{r:2,c:4,type:'cannon-cap'},{r:2,c:4,type:'piece',piece:'R',color:'b'},{r:1,c:5,type:'cannon-land'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">포 (C) — 캡처</strong><br><span style="font-size:.85rem;color:#c8b890;">경로가 완전히 비어있을 때, 상대 기물을 뛰어넘어 바로 다음 1칸에 착지하며 포획. 착지 칸이 막히면 캡처 불가.</span><br><span style="font-size:.78rem;color:#906840;">파란=이동경로, 빨간=상대기물, 노란=착지칸</span></div></div>` +
+    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:6px;">` +
+    `<div style="flex-shrink:0;">${miniBoard(3,[{r:2,c:0,type:'piece',piece:'FC',color:'w'}])}</div>` +
+    `<div><strong style="color:#e8d5b0;">고정 포탑 (강급된 포)</strong><br><span style="font-size:.85rem;color:#c8b890;">이동 불가. 캡처 방식은 포와 동일.</span></div></div>`
+    :'')
+  );
+
+  html+=isec('승급 (Promotion)',
+    ip('폰이 <strong>전진하여</strong> 끝 랭크 도달 시에만 승급 가능.') +
+    ip(`승급 가능 기물: <strong style="color:#e8d5b0;">${isBasic?'용마, 룩, 나이트, 만':'용마, 룩, 나이트, 포'}</strong>`) +
+    inote('강급으로 생성된 폰은 승급 불가. 끝 랭크에서 생성된 경우 이동 자체가 불가능.')
+  );
+
+  return html;
+}
+
+function openOpeningModal() {
+  document.getElementById('opening-modal-content').innerHTML = buildOpeningContent();
+  document.getElementById('opening-modal').style.display = 'flex';
+}
+function closeOpeningModal() {
+  document.getElementById('opening-modal').style.display = 'none';
+}
+
+function openingMiniBoard(moves) {
+  // 6×6 보드를 해당 수순으로 진행한 후의 포지션을 미니보드로 표시
+  const b = Array(6).fill(null).map(()=>Array(6).fill(null));
+  b[0]=[{type:'R',color:'b'},{type:'N',color:'b'},{type:'K',color:'b'},{type:'Q',color:'b'},{type:'N',color:'b'},{type:'R',color:'b'}];
+  b[1]=Array(6).fill(null).map(()=>({type:'P',color:'b'}));
+  b[5]=[{type:'R',color:'w'},{type:'N',color:'w'},{type:'K',color:'w'},{type:'Q',color:'w'},{type:'N',color:'w'},{type:'R',color:'w'}];
+  b[4]=Array(6).fill(null).map(()=>({type:'P',color:'w'}));
+  const files='abcdef';
+  for(const mv of moves){
+    const clean=mv.replace(/^[KQRNMW]/,'').replace(/[×↓+]/g,'').toLowerCase();
+    const fc=files.indexOf(clean[0]),fr=6-parseInt(clean[1]);
+    const tc=files.indexOf(clean[2]),tr=6-parseInt(clean[3]);
+    if(fc<0||fr<0||tc<0||tr<0) continue;
+    const piece=b[fr][fc]; if(!piece) continue;
+    const cap=b[tr][tc]; let moved={...piece};
+    if(cap&&cap.type!=='P'){
+      const dm={Q:'Mann',R:'Wazir',N:'P',Mann:'Mann',Wazir:'Wazir',K:'K'};
+      const nt=dm[piece.type]??piece.type;
+      if(nt!==piece.type) moved={...piece,type:nt,originalType:piece.type};
+    }
+    b[fr][fc]=null; b[tr][tc]=moved;
+  }
+  // SVG 렌더
+  const cs=22, S=6, W=S*cs, H=S*cs;
+  let svg=`<svg width="${W}" height="${H}" style="border:1px solid #5a3010;display:block;flex-shrink:0;">`;
+  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
+    const x=c*cs,y=r*cs;
+    svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="${(r+c)%2===0?'#e8d5b0':'#7a4a2a'}"/>`;
+  }
+  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
+    const p=b[r][c]; if(!p) continue;
+    const isW=p.color==='w';
+    const sym={K:isW?'♔':'♚',Q:isW?'♕':'♛',R:isW?'♖':'♜',N:isW?'♘':'♞',P:isW?'♙':'♟',Mann:isW?'♕':'♛',Wazir:isW?'♖':'♜'}[p.type]||'?';
+    const demoted=p.type==='Mann'||p.type==='Wazir';
+    const x=c*cs,y=r*cs;
+    if(demoted){
+      svg+=`<g transform="translate(${x+cs/2},${y+cs/2}) scale(1,-1) translate(${-(x+cs/2)},${-(y+cs/2)})">`;
+      svg+=`<text x="${x+cs/2}" y="${y+cs*.72}" text-anchor="middle" font-size="${cs*.82}" fill="${isW?'#fff':'#1a0a00'}" style="paint-order:stroke;stroke:${isW?'#000':'rgba(255,255,255,.3)'};stroke-width:1px;">${sym}</text>`;
+      svg+=`</g>`;
+    } else {
+      svg+=`<text x="${x+cs/2}" y="${y+cs*.72}" text-anchor="middle" font-size="${cs*.82}" fill="${isW?'#fff':'#1a0a00'}" style="paint-order:stroke;stroke:${isW?'#000':'rgba(255,255,255,.3)'};stroke-width:1px;">${sym}</text>`;
+    }
+  }
+  svg+=`</svg>`;
+  return svg;
+}
+
+const OPENING_LIST = [
+  { name:'베리어 오프닝', moves:['d2d3'] },
+  { name:'킹 프론트 피앙케토 오프닝', moves:['c2c3'] },
+  { name:'퀸 사이드 피앙케토 오프닝', moves:['e2e3'] },
+  { name:'베리어 카운터 갬빗', moves:['d2d3','c5c4'] },
+  { name:'킹즈 센터 갬빗', moves:['d2d3','c5c4','c2c3'] },
+  { name:'피앙케토 어택', moves:['d2d3','c5c4','e2e3'] },
+  { name:'센터게임', moves:['d2d3','c5c4','c2c3','d5d4'] },
+  { name:'베리어 카운터 갬빗 수락 메인 라인', moves:['d2d3','c5c4','d3c4','b5c4','b1c3','d6c5'] },
+  { name:'베리어 카운터 갬빗 수락 오픈 베리에이션', moves:['d2d3','c5c4','d3c4','d5c4','b1c3','d6c5'] },
+  { name:'베리어 카운터 갬빗 수락 폰 베리에이션', moves:['d2d3','c5c4','d3c4','b5c4','c2c3','d6c5'] },
+  { name:'베리어 카운터 갬빗 수락 슬로우 베리에이션', moves:['d2d3','c5c4','d3c4','d5c4','c2c3','d6c5'] },
+  { name:'센터 더블 갬빗', moves:['d2d3','c5c4','d3c4','b5c4','c2c3','d5d4'] },
+  { name:'오픈 더블 갬빗', moves:['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4'] },
+  { name:'오픈 더블 갬빗 수락', moves:['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4','c3b4','d6b4'] },
+  { name:'피앙케토 어택 올드 베리에이션', moves:['d2d3','c5c4','e2e3','c4d3','c2d3','d6c5'] },
+  { name:'피앙케토 어택 메인 라인', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4'] },
+  { name:'피앙케토 어택 메인 라인 나이트 베리에이션', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6c5'] },
+  { name:'피앙케토 어택 메인 라인 퀸 베리에이션', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6c5'] },
+  { name:'나이트 어택', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6f4','e3f4','e6f4'] },
+  { name:'액셀러레이티드 퀸 어택', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6f4','e3f4','d6f4'] },
+];
+
+function buildOpeningContent() {
+  let html = '';
+  for(const op of OPENING_LIST){
+    const boardSvg = openingMiniBoard(op.moves);
+    html+=`<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #2a1508;">
+      ${boardSvg}
+      <div style="font-family:'Cinzel',serif;font-size:.85rem;color:#c9a84c;">${op.name}</div>
+    </div>`;
+  }
+  return html;
+}
+
+function openInfoModal() {
+  document.getElementById('info-content').innerHTML=buildInfoContent();
+  document.getElementById('info-modal').style.display='flex';
+}
+function closeInfoModal() {
+  document.getElementById('info-modal').style.display='none';
+}
+
+// ── 시작 ──────────────────────────────────────────────────────────────────
+renderLegend();
+initBoard();
+renderBoard();
+updateStatus();
+</script>
+</body>
+</html>
