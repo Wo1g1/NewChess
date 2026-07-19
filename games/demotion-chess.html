@@ -6,27 +6,52 @@
 <title>Demotion Chess</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+  /* 실제 보드 색은 테마와 무관하게 항상 고정 (강급체스 자체 고유 색) */
   :root {
     --light: #e8d5b0; --dark: #7a4a2a; --board-border: #2a1005;
-    --accent: #c9a84c; --text: #e8d5b0;
     --highlight: rgba(255,220,50,0.5);
     --valid: rgba(60,180,60,0.35); --capture: rgba(200,50,50,0.45);
   }
+  /* 전역 테마 토큰 — 브라운(기본, 강급체스 자체 룩) */
+  :root, html[data-theme="brown"]{
+    --bg:#1c0e05; --panel-bg:rgba(255,255,255,.04); --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
+    --accent:#c9a84c; --accent-border:#c9a84c;
+    --btn-bg:transparent; --btn-border:#5a3a18; --btn-accent-bg:rgba(201,168,76,.18);
+    --tab-inactive-bg:transparent; --tab-inactive-border:#5a3a18; --tab-inactive-text:#806040;
+    --modal-bg:#1e0e05; --modal-border:#c9a84c;
+    --log-bg:transparent; --log-border:transparent; --log-text:#a08060;
+    --font-heading:'Cinzel',serif; --font-body:'Crimson Text',serif;
+  }
+  /* 전역 테마 토큰 — 심플 */
+  html[data-theme="simple"]{
+    --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
+    --accent:#9ccc65; --accent-border:#8fbc5a;
+    --btn-bg:#333; --btn-border:#555; --btn-accent-bg:#3a4d2a;
+    --tab-inactive-bg:#333; --tab-inactive-border:#4d4d4d; --tab-inactive-text:#999;
+    --modal-bg:#1e1e1e; --modal-border:#8fbc5a;
+    --log-bg:#2a2a2a; --log-border:#444; --log-text:#999;
+    --font-heading:-apple-system,sans-serif; --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: #1c0e05;
-    background-image: radial-gradient(ellipse at 50% 0%, #3a1a08 0%, #1c0e05 70%);
+    background: var(--bg);
+    background-image: none;
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-family: 'Crimson Text', serif; color: var(--text); padding: 20px;
+    font-family: var(--font-body); color: var(--text); padding: 20px;
   }
-  h1 { font-family:'Cinzel',serif; font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); text-shadow:0 0 30px rgba(201,168,76,.4); margin-bottom:4px; }
-  .subtitle { font-style:italic; font-size:1rem; color:#a07848; margin-bottom:16px; letter-spacing:.05em; }
+  html[data-theme="brown"] body{ background-image: radial-gradient(ellipse at 50% 0%, #3a1a08 0%, #1c0e05 70%); }
+  h1 { font-family:var(--font-heading); font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); margin-bottom:4px; }
+  html[data-theme="brown"] h1{ text-shadow:0 0 30px rgba(201,168,76,.4); }
+  .subtitle { font-style:italic; font-size:1rem; color:var(--text-dim); margin-bottom:10px; letter-spacing:.05em; }
+  #theme-toggle { display:flex; gap:4px; margin-bottom:16px; }
+  #theme-toggle button { flex:1; font-size:.7rem; padding:6px 10px; width:auto; }
+  #theme-toggle button.active { background:var(--btn-accent-bg); border-color:var(--accent-border); color:var(--accent); }
   .game-wrap { display:flex; gap:28px; align-items:flex-start; }
   .board-wrap { display:flex; flex-direction:column; align-items:center; }
   .coords-row { display:flex; margin-bottom:4px; padding-left:28px; }
-  .coord-label { text-align:center; font-family:'Cinzel',serif; font-size:.75rem; color:#8a6030; }
-  .rank-label { width:24px; text-align:center; font-family:'Cinzel',serif; font-size:.75rem; color:#8a6030; }
+  .coord-label { text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
+  .rank-label { width:24px; text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
   #board { display:grid; border:3px solid var(--board-border); box-shadow:0 0 40px rgba(0,0,0,.8); }
   .cell { display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
   .cell.light { background:var(--light); } .cell.dark { background:var(--dark); }
@@ -44,39 +69,93 @@
   /* sidebar */
   .sidebar { width:220px; display:flex; flex-direction:column; gap:10px; }
   /* version toggle */
-  .version-toggle { display:flex; border:1px solid #3a2010; border-radius:4px; overflow:hidden; }
-  .version-btn { flex:1; font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.08em; padding:7px 4px; background:transparent; border:none; color:#806040; cursor:pointer; transition:background .15s,color .15s; }
-  .version-btn.active { background:rgba(201,168,76,.18); color:var(--accent); }
-  .version-btn:first-child { border-right:1px solid #3a2010; }
-  .panel { background:rgba(255,255,255,.04); border:1px solid #3a2010; border-radius:4px; padding:7px 14px; }
-  .panel h3 { font-family:'Cinzel',serif; font-size:.75rem; letter-spacing:.1em; color:var(--accent); margin-bottom:8px; text-transform:uppercase; }
-  #turn-display { font-family:'Cinzel',serif; font-size:1rem; font-weight:600; color:var(--text); text-align:center; }
-  #status-msg { font-style:italic; font-size:.85rem; color:#c09060; text-align:center; }
-  #log { font-size:.82rem; color:#a08060; line-height:1.7; max-height:180px; overflow-y:auto; word-break:break-all; }
-  #log::-webkit-scrollbar { width:4px; } #log::-webkit-scrollbar-track { background:transparent; } #log::-webkit-scrollbar-thumb { background:#4a2a10; border-radius:2px; }
+  .version-toggle { display:flex; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+  .version-btn { flex:1; font-family:var(--font-heading); font-size:.72rem; letter-spacing:.08em; padding:7px 4px; background:transparent; border:none; color:var(--tab-inactive-text); cursor:pointer; transition:background .15s,color .15s; }
+  .version-btn.active { background:var(--btn-accent-bg); color:var(--accent); }
+  .version-btn:first-child { border-right:1px solid var(--border); }
+  .panel { background:var(--panel-bg); border:1px solid var(--border); border-radius:4px; padding:7px 14px; }
+  .panel h3 { font-family:var(--font-heading); font-size:.75rem; letter-spacing:.1em; color:var(--accent); margin-bottom:8px; text-transform:uppercase; }
+  #turn-display { font-family:var(--font-heading); font-size:1rem; font-weight:600; color:var(--text); text-align:center; }
+  #status-msg { font-style:italic; font-size:.85rem; color:var(--text-dim); text-align:center; }
+  #log { font-size:.82rem; color:var(--log-text); line-height:1.7; max-height:180px; overflow-y:auto; word-break:break-all; font-family:var(--font-body); }
+  #log::-webkit-scrollbar { width:4px; } #log::-webkit-scrollbar-track { background:transparent; } #log::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
   .log-num { color:var(--accent); font-weight:600; }
   .log-check { color:#f0c040; font-weight:600; }
   .log-demotion { color:#e05050; }
-  .log-result { color:#e8d5b0; font-weight:600; display:block; margin-top:4px; }
-  .legend-item { display:flex; align-items:center; gap:6px; margin-bottom:5px; font-size:.8rem; color:#a08060; }
-  .legend-piece { font-size:20px; width:24px; text-align:center; filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
-  .legend-piece.demoted { display:inline-block; transform:scaleY(-1); }
-  button { font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.08em; background:transparent; border:1px solid #5a3a18; color:var(--accent); padding:7px 14px; cursor:pointer; border-radius:2px; transition:background .15s,border-color .15s; width:100%; margin-top:2px; }
-  button:hover { background:rgba(201,168,76,.1); border-color:var(--accent); }
+  .log-result { color:var(--text); font-weight:600; display:block; margin-top:4px; }
+  #rules-box { font-size:.78rem; color:var(--text-dim); line-height:1.6; }
+  #rules-box .rules-title { color:var(--accent); margin-bottom:4px; }
+  button { font-family:var(--font-heading); font-size:.72rem; letter-spacing:.08em; background:var(--btn-bg); border:1px solid var(--btn-border); color:var(--accent); padding:7px 14px; cursor:pointer; border-radius:2px; transition:background .15s,border-color .15s; width:100%; margin-top:2px; }
+  button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border); }
   #promotion-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100; align-items:center; justify-content:center; }
   #promotion-modal.active { display:flex; }
-  .promo-box { background:#2a1508; border:2px solid var(--accent); border-radius:4px; padding:24px; text-align:center; }
-  .promo-box h2 { font-family:'Cinzel',serif; color:var(--accent); margin-bottom:16px; font-size:1rem; letter-spacing:.1em; }
+  .promo-box { background:var(--modal-bg); border:2px solid var(--modal-border); border-radius:4px; padding:24px; text-align:center; }
+  .promo-box h2 { font-family:var(--font-heading); color:var(--accent); margin-bottom:16px; font-size:1rem; letter-spacing:.1em; }
   .promo-options { display:flex; gap:12px; justify-content:center; }
-  .promo-option { width:70px; height:70px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid #5a3a18; border-radius:4px; cursor:pointer; transition:background .15s; background:transparent; color:var(--text); gap:4px; }
-  .promo-option:hover { background:rgba(201,168,76,.15); border-color:var(--accent); }
+  .promo-option { width:70px; height:70px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid var(--btn-border); border-radius:4px; cursor:pointer; transition:background .15s; background:transparent; color:var(--text); gap:4px; }
+  .promo-option:hover { background:var(--btn-accent-bg); border-color:var(--accent-border); }
   .promo-option span:first-child { font-size:36px; filter:drop-shadow(0 1px 2px #000); }
-  .promo-option span:last-child { font-size:.65rem; font-family:'Cinzel',serif; color:var(--accent); }
+  .promo-option span:last-child { font-size:.65rem; font-family:var(--font-heading); color:var(--accent); }
+
+  /* 기물 행마 안내 모달 (4개 게임 공용 스타일) */
+  #piece-modal{
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.75); z-index:150;
+    align-items:center; justify-content:center;
+  }
+  #piece-modal.show{ display:flex; }
+  #piece-modal-box{
+    background:var(--modal-bg); border:2px solid var(--modal-border);
+    border-radius:10px; padding:20px; width:520px; max-height:90vh;
+    overflow-y:auto; position:relative; font-family:var(--font-body);
+  }
+  #piece-modal-box h3{ font-family:var(--font-heading); color:var(--accent); font-size:1rem; letter-spacing:.08em; margin-bottom:12px; text-align:center; }
+  #piece-tabs{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; }
+  .ptab{
+    background:var(--tab-inactive-bg); color:var(--tab-inactive-text); border:1px solid var(--tab-inactive-border);
+    padding:4px 9px; cursor:pointer; font-size:.72rem; border-radius:4px;
+    width:auto; font-family:var(--font-heading); letter-spacing:.05em; margin-top:0;
+  }
+  .ptab.active{ background:var(--btn-accent-bg); color:var(--accent); border-color:var(--accent-border); }
+  .ptab:hover{ filter:brightness(1.2); }
+  #piece-content{ display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; }
+  .terrain-section{ flex:1; min-width:160px; }
+  .terrain-section h5{ font-family:var(--font-heading); font-size:.72rem; color:var(--accent); margin-bottom:6px; text-align:center; letter-spacing:.04em; }
+  .mini-board{
+    display:grid; gap:1px; background:#150b04; border:1px solid var(--border);
+    width:fit-content; margin:0 auto 6px auto;
+  }
+  .mc{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px; position:relative; }
+  /* 실제 보드 색과 동일한 체커 — 테마와 무관하게 고정 */
+  .mc.chk-l{ background:var(--light); }
+  .mc.chk-d{ background:var(--dark); }
+  .mc.piece-cell{ background:#9a8010 !important; }
+  .mc.enemy{ background:#5a1010 !important; color:#e8d5b0; }
+  /* 이동/캡처 표기 — 색은 테마와 무관하게 고정: 이동=파랑, 캡처=빨강, 이동+캡처=보라 */
+  .mc .dot, .leg-box .dot{ position:absolute; top:50%; left:50%; border-radius:50%; transform:translate(-50%,-50%); }
+  .mc .dot{ width:16px; height:16px; z-index:1; }
+  .leg-box .dot{ width:11px; height:11px; }
+  .dot.mv{ background:rgba(58,120,246,.85); }
+  .dot.cap{ background:rgba(230,60,60,.85); }
+  .dot.mvcap{ background:rgba(155,89,182,.9); }
+  .piece-desc{ font-size:.72rem; color:var(--text-dim); line-height:1.6; margin-top:4px; }
+  .legend-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .leg{ display:flex; align-items:center; gap:3px; font-size:.68rem; color:var(--text-dim); }
+  .leg-box{ width:12px; height:12px; border-radius:2px; position:relative; background:rgba(255,255,255,.08); }
+  #piece-close{
+    position:absolute; top:10px; right:14px; width:28px; height:28px;
+    background:none; border:none; color:var(--text-dim); font-size:1.1rem; cursor:pointer;
+  }
+  #piece-close:hover{ color:var(--accent); }
 </style>
 </head>
 <body>
 <h1>DEMOTION CHESS</h1>
 <p class="subtitle">기물을 잡으면 강급당한다</p>
+<div id="theme-toggle">
+  <button data-theme-btn="simple">심플</button>
+  <button data-theme-btn="brown">브라운</button>
+</div>
 
 <div class="game-wrap">
   <div class="board-wrap">
@@ -106,13 +185,14 @@
       <div id="status-msg"></div>
     </div>
 
-    <div class="panel" id="legend-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <h3 style="margin-bottom:0;">강급 규칙</h3>
-        <button onclick="openInfoModal()" style="width:22px;height:22px;padding:0;font-size:1rem;line-height:1;border-radius:50%;margin:0;flex-shrink:0;">+</button>
-      </div>
-      <div id="legend-content"></div>
+    <div class="panel" id="rules-box">
+      <h3>규칙</h3>
+      <div class="rules-title">승리 조건</div>
+      <div>• 체크메이트</div>
+      <div>• 스테일메이트(만든 쪽이 승리)</div>
+      <div style="margin-top:6px;">폰을 제외한 기물을 캡처하면 캡처한 기물이 강급된다.</div>
     </div>
+    <button id="rulesBtn">기물 행마 보기</button>
 
     <div class="panel" id="opening-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -141,16 +221,19 @@
 
 <!-- 오프닝 모달 -->
 <div id="opening-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px;">
-  <div style="background:#1e0e05;border:2px solid #c9a84c;border-radius:6px;width:100%;max-width:720px;padding:24px;position:relative;font-family:'Crimson Text',serif;color:#e8d5b0;">
+  <div style="background:var(--modal-bg);border:2px solid var(--modal-border);border-radius:6px;width:100%;max-width:720px;padding:24px;position:relative;font-family:var(--font-body);color:var(--text);">
     <button onclick="closeOpeningModal()" style="position:absolute;top:10px;right:12px;width:28px;height:28px;padding:0;font-size:1.1rem;border-radius:50%;margin:0;">✕</button>
-    <h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:#c9a84c;margin-bottom:16px;">오프닝 목록</h2>
+    <h2 style="font-family:var(--font-heading);font-size:1.2rem;color:var(--accent);margin-bottom:16px;">오프닝 목록</h2>
     <div id="opening-modal-content"></div>
   </div>
 </div>
-<div id="info-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px;">
-  <div style="background:#1e0e05;border:2px solid #c9a84c;border-radius:6px;width:100%;max-width:680px;padding:24px;position:relative;font-family:'Crimson Text',serif;color:#e8d5b0;">
-    <button onclick="closeInfoModal()" style="position:absolute;top:10px;right:12px;width:28px;height:28px;padding:0;font-size:1.1rem;border-radius:50%;margin:0;">✕</button>
-    <div id="info-content"></div>
+
+<div id="piece-modal">
+  <div id="piece-modal-box">
+    <button id="piece-close">✕</button>
+    <h3>기물 행마 안내</h3>
+    <div id="piece-tabs"></div>
+    <div id="piece-content"></div>
   </div>
 </div>
 
@@ -167,7 +250,6 @@ function switchVersion(v) {
   document.getElementById('btn-extended').classList.toggle('active', v==='extended');
   document.getElementById('opening-info-btn').style.display = v==='basic' ? '' : 'none';
   resetGame();
-  renderLegend();
 }
 
 function getBoardSize() { return BOARD_SIZE[currentVersion]; }
@@ -534,24 +616,6 @@ function renderCaptured() {
   });
 }
 
-function renderLegend() {
-  const el=document.getElementById('legend-content');
-  if(currentVersion==='basic'){
-    el.innerHTML=`
-      <div class="legend-item"><span class="legend-piece">♕</span><span>→</span><span class="legend-piece demoted">♕</span><span>용마→만</span></div>
-      <div class="legend-item"><span class="legend-piece">♖</span><span>→</span><span class="legend-piece demoted">♖</span><span>룩→와지르</span></div>
-      <div class="legend-item"><span class="legend-piece">♘</span><span>→</span><span class="legend-piece">♙</span><span>나이트→폰</span></div>
-      <div style="font-size:.78rem;color:#806040;margin-top:6px;font-style:italic;">폰 캡처는 강급 없음</div>`;
-  } else {
-    el.innerHTML=`
-      <div class="legend-item"><span class="legend-piece">♕</span><span>→</span><span class="legend-piece demoted">♕</span><span>용마→만</span></div>
-      <div class="legend-item"><span class="legend-piece">♖</span><span>→</span><span class="legend-piece demoted">♖</span><span>룩→와지르</span></div>
-      <div class="legend-item"><span class="legend-piece">♘</span><span>→</span><span class="legend-piece">♙</span><span>나이트→폰</span></div>
-      <div class="legend-item"><span class="legend-piece">♗</span><span>→</span><span class="legend-piece demoted">♗</span><span>포→고정포탑</span></div>
-      <div style="font-size:.78rem;color:#806040;margin-top:6px;font-style:italic;">폰 캡처는 강급 없음</div>`;
-  }
-}
-
 // ── 상태 업데이트 ─────────────────────────────────────────────────────────
 function updateStatus() {
   if(gameOver) return;
@@ -724,100 +788,233 @@ function resetGame(){
   renderBoard();updateStatus();
 }
 
-// ── 인포 모달 ─────────────────────────────────────────────────────────────
-function miniBoard(size, highlights) {
-  const cs=28, W=size*cs, H=size*cs;
-  let svg=`<svg width="${W}" height="${H}" style="border:1px solid #5a3010;display:block;margin:6px auto;">`;
-  for(let r=0;r<size;r++) for(let c=0;c<size;c++){
-    const x=c*cs,y=r*cs;
-    svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="${(r+c)%2===0?'#e8d5b0':'#7a4a2a'}"/>`;
-  }
-  for(const h of highlights){
-    const x=h.c*cs,y=h.r*cs;
-    if(h.type==='move') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.28}" fill="rgba(60,180,60,.55)"/>`;
-    else if(h.type==='capture') svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="rgba(200,50,50,.45)"/>`;
-    else if(h.type==='cannon-path') svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="rgba(100,160,255,.25)"/>`;
-    else if(h.type==='cannon-dot') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.2}" fill="rgba(80,140,255,.8)"/>`;
-    else if(h.type==='capture-dot') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.2}" fill="rgba(200,50,50,.9)"/>`;
-    else if(h.type==='cannon-cap') svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="rgba(200,50,50,.55)"/>`;
-    else if(h.type==='cannon-land') svg+=`<circle cx="${x+cs/2}" cy="${y+cs/2}" r="${cs*.28}" fill="rgba(255,180,0,.7)"/>`;
-    else if(h.type==='piece'){
-      const isW=h.color==='w';
-      const sym={K:isW?'♔':'♚',Q:isW?'♕':'♛',R:isW?'♖':'♜',N:isW?'♘':'♞',P:isW?'♙':'♟',C:isW?'♗':'♝',FC:isW?'♗':'♝',Mann:isW?'♕':'♛',Wazir:isW?'♖':'♜'}[h.piece]||'?';
-      svg+=`<text x="${x+cs/2}" y="${y+cs*.72}" text-anchor="middle" font-size="${cs*.82}" fill="${isW?'#fff':'#1a0a00'}" style="paint-order:stroke;stroke:${isW?'#000':'rgba(255,255,255,.3)'};stroke-width:1px;">${sym}</text>`;
+// ── 기물 행마 안내 모달 (4개 게임 공용 구조) ────────────────────────────────
+function makeGrid(size){ return Array.from({length:size}, () => Array(size).fill(null)); }
+
+function buildPieceModalData(){
+  const isBasic = currentVersion === 'basic';
+  const data = {
+    P: {
+      name: '폰', icon: '♙',
+      boards: [{
+        label: '기본',
+        grid: (() => {
+          const g = makeGrid(5); g[2][2]='piece-cell';
+          g[1][2]='mv'; g[1][1]='cap'; g[1][3]='cap';
+          return g;
+        })(),
+        desc: '전방 1칸: 이동 전용. 전방 대각 2방향: 캡처 전용.' + (isBasic ? '' : ' 확장판은 첫 수에 한해 2칸 전진, 앙파상도 가능.') + ' 끝 랭크 도달 시 승급.',
+        legends: [['mv',null,'이동 전용'],['cap',null,'캡처 전용']]
+      }]
+    },
+    N: {
+      name: '나이트', icon: '♘',
+      boards: [{
+        label: '기본',
+        grid: (() => {
+          const g = makeGrid(7); g[3][3]='piece-cell';
+          for(const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) g[3+dr][3+dc]='mv-cap';
+          return g;
+        })(),
+        desc: 'L자(2+1) 점프로 이동 및 캡처. 상대 기물을 캡처하면(폰 제외) 강급되어 폰이 된다.',
+        legends: [['mv-cap',null,'이동+캡처']]
+      }]
+    },
+    R: {
+      name: '룩', icon: '♖',
+      boards: [
+        {
+          label: '기본',
+          grid: (() => {
+            const g = makeGrid(7); g[3][3]='piece-cell';
+            for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv-cap'; g[i][3]='mv-cap'; }
+            return g;
+          })(),
+          desc: '직선 4방향 무제한 이동 및 캡처.',
+          legends: [['mv-cap',null,'이동+캡처']]
+        },
+        {
+          label: '강급 후 (와지르)',
+          grid: (() => {
+            const g = makeGrid(7); g[3][3]='piece-cell';
+            for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) g[3+dr][3+dc]='mv-cap';
+            return g;
+          })(),
+          desc: '직선 4방향 1칸만 이동 및 캡처.',
+          legends: [['mv-cap',null,'이동+캡처']]
+        }
+      ]
+    },
+    Q: {
+      name: '용마', icon: '♕',
+      boards: [
+        {
+          label: '기본',
+          grid: (() => {
+            const g = makeGrid(7); g[3][3]='piece-cell';
+            for(let i=1;i<=3;i++){
+              if(3-i>=0){ g[3-i][3-i]='mv-cap'; g[3-i][3+i]='mv-cap'; }
+              if(3+i<7){ g[3+i][3-i]='mv-cap'; g[3+i][3+i]='mv-cap'; }
+            }
+            for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) g[3+dr][3+dc]='mv-cap';
+            return g;
+          })(),
+          desc: '대각 4방향 무제한 슬라이드 + 직선 4방향 1칸. 전부 이동+캡처.',
+          legends: [['mv-cap',null,'이동+캡처']]
+        },
+        {
+          label: '강급 후 (만)',
+          grid: (() => {
+            const g = makeGrid(7); g[3][3]='piece-cell';
+            for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='mv-cap';
+            return g;
+          })(),
+          desc: '8방향 1칸 이동 및 캡처.',
+          legends: [['mv-cap',null,'이동+캡처']]
+        }
+      ]
+    },
+    K: {
+      name: '킹', icon: '♔',
+      boards: [{
+        label: '기본',
+        grid: (() => {
+          const g = makeGrid(7); g[3][3]='piece-cell';
+          for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='mv-cap';
+          return g;
+        })(),
+        desc: '8방향 1칸 이동 및 캡처. 강급되지 않는다.',
+        legends: [['mv-cap',null,'이동+캡처']]
+      }]
+    },
+    C: {
+      name: '포', icon: '♗',
+      boards: [
+        {
+          label: '이동',
+          grid: (() => {
+            const g = makeGrid(7); g[3][3]='piece-cell';
+            for(let i=1;i<=3;i++){
+              g[3-i][3]='mv'; g[3+i][3]='mv'; g[3][3-i]='mv'; g[3][3+i]='mv';
+              if(3-i>=0){ g[3-i][3-i]='mv'; g[3-i][3+i]='mv'; }
+              if(3+i<7){ g[3+i][3-i]='mv'; g[3+i][3+i]='mv'; }
+            }
+            return g;
+          })(),
+          desc: '8방향 슬라이드. 기물을 만나면 그 앞에서 멈추며, 이동으로는 캡처할 수 없다.',
+          legends: [['mv',null,'이동 전용']]
+        },
+        {
+          label: '캡처',
+          grid: (() => {
+            const g = makeGrid(7); g[3][3]='piece-cell';
+            g[3][1]='enemy'; g[3][0]='cap';
+            return g;
+          })(),
+          desc: '경로가 완전히 비어 있을 때, 첫 번째로 만나는 상대 기물을 뛰어넘어 바로 다음 빈 칸에 착지하며 캡처한다(그림은 왼쪽 방향 예시, 8방향 전부 동일). 착지 칸이 막혀 있으면 캡처할 수 없다. 강급되면 고정 포탑이 되어 이동은 불가능하지만 캡처 방식은 동일하다.',
+          legends: [['enemy','#5a1010','상대 기물'],['cap',null,'착지(캡처)']]
+        }
+      ]
     }
+  };
+  return data;
+}
+
+function getPieceOrder(){
+  return currentVersion === 'extended' ? ['P','N','R','Q','K','C'] : ['P','N','R','Q','K'];
+}
+
+let activePieceTab = 'P';
+
+function openPieceModal(){
+  const order = getPieceOrder();
+  if(!order.includes(activePieceTab)) activePieceTab = 'P';
+  document.getElementById('piece-modal').classList.add('show');
+  renderPieceTabs();
+  renderPieceContent(activePieceTab);
+}
+function closePieceModal(){
+  document.getElementById('piece-modal').classList.remove('show');
+}
+
+function renderPieceTabs(){
+  const data = buildPieceModalData();
+  const order = getPieceOrder();
+  const tabs = document.getElementById('piece-tabs');
+  tabs.innerHTML = '';
+  for(const key of order){
+    const btn = document.createElement('button');
+    btn.className = 'ptab' + (key===activePieceTab ? ' active' : '');
+    btn.textContent = data[key].name;
+    btn.onclick = () => { activePieceTab = key; renderPieceTabs(); renderPieceContent(key); };
+    tabs.appendChild(btn);
   }
-  return svg+'</svg>';
 }
 
-function isec(title,content){ return `<div style="margin-bottom:18px;"><div style="font-family:'Cinzel',serif;font-size:.9rem;color:#c9a84c;border-bottom:1px solid #3a2010;padding-bottom:4px;margin-bottom:10px;">${title}</div>${content}</div>`; }
-function ip(txt){ return `<p style="font-size:.9rem;line-height:1.6;color:#c8b890;margin-bottom:6px;">${txt}</p>`; }
-function inote(txt){ return `<p style="font-size:.82rem;font-style:italic;color:#906840;margin-bottom:4px;">※ ${txt}</p>`; }
+function renderPieceContent(key){
+  const data = buildPieceModalData()[key];
+  const cont = document.getElementById('piece-content');
+  cont.innerHTML = '';
 
-function buildInfoContent() {
-  const isBasic=currentVersion==='basic';
-  let html=`<h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:#c9a84c;margin-bottom:16px;">${isBasic?'기본 버전 (6×6)':'확장 버전 (8×8)'} — 규칙 및 행마</h2>`;
+  for(const b of data.boards){
+    const sec = document.createElement('div');
+    sec.className = 'terrain-section';
+    sec.style.marginBottom = '10px';
 
-  html+=isec('기본 규칙',
-    ip('두 플레이어가 번갈아 수를 둔다. 상대 킹을 체크메이트하면 승리.') +
-    ip('스테일메이트: 합법 수가 없으나 체크가 아닌 경우, <strong style="color:#e05050;">스테일메이트를 만든 쪽이 승리</strong>한다.') +
-    (isBasic
-      ? ip('폰 2칸 전진 불가. 앙파상 없음. 캐슬링 없음.')
-      : ip('폰 첫 수 2칸 전진 가능. 앙파상 있음. 캐슬링 없음.'))
-  );
+    const h5 = document.createElement('h5');
+    h5.textContent = b.label;
+    sec.appendChild(h5);
 
-  html+=isec('강급 (Demotion)',
-    ip('폰을 제외한 기물을 캡처하면 <strong style="color:#e05050;">캡처한 기물이 강급</strong>된다. 폰 캡처 시 강급 없음.') +
-    `<div style="display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;">` +
-    `<div style="text-align:center;font-size:.78rem;color:#a08060;">용마→만<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'Q',color:'w'},{r:0,c:0,type:'move'},{r:0,c:2,type:'move'},{r:2,c:0,type:'move'},{r:2,c:2,type:'move'},{r:1,c:0,type:'move'},{r:1,c:2,type:'move'},{r:0,c:1,type:'move'},{r:2,c:1,type:'move'}])}</div>` +
-    `<div style="text-align:center;font-size:.78rem;color:#a08060;">룩→와지르<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'R',color:'w'},{r:1,c:0,type:'move'},{r:1,c:2,type:'move'},{r:0,c:1,type:'move'},{r:2,c:1,type:'move'}])}</div>` +
-    `<div style="text-align:center;font-size:.78rem;color:#a08060;">나이트→폰<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'P',color:'w'},{r:0,c:1,type:'cannon-dot'},{r:0,c:0,type:'capture-dot'},{r:0,c:2,type:'capture-dot'}])}</div>` +
-    (!isBasic?`<div style="text-align:center;font-size:.78rem;color:#a08060;">포→고정포탑<br>${miniBoard(3,[{r:1,c:1,type:'piece',piece:'FC',color:'w'}])}</div>`:'') +
-    `</div>`
-  );
+    const grid = b.grid;
+    const size = grid.length;
+    const mb = document.createElement('div');
+    mb.className = 'mini-board';
+    mb.style.gridTemplateColumns = `repeat(${size}, 32px)`;
+    mb.style.gridTemplateRows = `repeat(${size}, 32px)`;
 
-  html+=isec('기물 행마',
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(isBasic?4:5,[{r:isBasic?2:3,c:1,type:'piece',piece:'P',color:'w'},{r:isBasic?1:2,c:1,type:'cannon-dot'},...(isBasic?[]:[{r:1,c:1,type:'cannon-dot'}]),{r:isBasic?1:2,c:0,type:'capture-dot'},{r:isBasic?1:2,c:2,type:'capture-dot'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">폰 (P)</strong><br><span style="font-size:.85rem;color:#c8b890;">전방 1칸 이동, 전방 대각 캡처.${isBasic?'':' 첫 수 2칸 전진 가능, 앙파상 있음.'} 끝 랭크 전진 시 승급.</span></div></div>` +
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        const cell = document.createElement('div');
+        const isL = (r+c)%2===0;
+        cell.className = 'mc ' + (isL?'chk-l':'chk-d');
+        const sp = grid[r][c];
+        if(sp==='piece-cell'){
+          cell.classList.add('piece-cell');
+          cell.textContent = data.icon;
+        } else if(sp==='enemy'){
+          cell.classList.add('enemy');
+          cell.textContent = '♟';
+        } else if(sp==='mv' || sp==='cap' || sp==='mv-cap'){
+          const dot = document.createElement('span');
+          dot.className = 'dot ' + (sp==='mv-cap' ? 'mvcap' : sp);
+          cell.appendChild(dot);
+        }
+        mb.appendChild(cell);
+      }
+    }
+    sec.appendChild(mb);
 
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(5,[{r:2,c:2,type:'piece',piece:'Q',color:'w'},{r:1,c:2,type:'move'},{r:3,c:2,type:'move'},{r:2,c:1,type:'move'},{r:2,c:3,type:'move'},{r:0,c:0,type:'move'},{r:1,c:1,type:'move'},{r:3,c:3,type:'move'},{r:4,c:4,type:'move'},{r:0,c:4,type:'move'},{r:1,c:3,type:'move'},{r:3,c:1,type:'move'},{r:4,c:0,type:'move'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">용마 (Q)</strong><br><span style="font-size:.85rem;color:#c8b890;">대각 슬라이드 + 직선 1칸. 강급 시 만(8방향 1칸).</span></div></div>` +
+    const leg = document.createElement('div');
+    leg.className = 'legend-row';
+    for(const [cls, color, lbl] of b.legends){
+      if(cls==='mv' || cls==='cap' || cls==='mv-cap'){
+        const dotClass = cls==='mv-cap' ? 'mvcap' : cls;
+        leg.innerHTML += `<div class="leg"><span class="leg-box"><span class="dot ${dotClass}"></span></span>${lbl}</div>`;
+      } else {
+        leg.innerHTML += `<div class="leg"><span class="leg-box" style="background:${color}"></span>${lbl}</div>`;
+      }
+    }
+    sec.appendChild(leg);
 
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(5,[{r:2,c:2,type:'piece',piece:'R',color:'w'},{r:0,c:2,type:'move'},{r:1,c:2,type:'move'},{r:3,c:2,type:'move'},{r:4,c:2,type:'move'},{r:2,c:0,type:'move'},{r:2,c:1,type:'move'},{r:2,c:3,type:'move'},{r:2,c:4,type:'move'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">룩 (R)</strong><br><span style="font-size:.85rem;color:#c8b890;">직선 슬라이드. 강급 시 와지르(직선 1칸).</span></div></div>` +
+    const desc = document.createElement('div');
+    desc.className = 'piece-desc';
+    desc.textContent = b.desc;
+    sec.appendChild(desc);
 
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(5,[{r:2,c:2,type:'piece',piece:'N',color:'w'},{r:0,c:1,type:'move'},{r:0,c:3,type:'move'},{r:1,c:0,type:'move'},{r:1,c:4,type:'move'},{r:3,c:0,type:'move'},{r:3,c:4,type:'move'},{r:4,c:1,type:'move'},{r:4,c:3,type:'move'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">나이트 (N)</strong><br><span style="font-size:.85rem;color:#c8b890;">L자 점프. 강급 시 폰.</span></div></div>` +
-
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(3,[{r:1,c:1,type:'piece',piece:'K',color:'w'},{r:0,c:0,type:'move'},{r:0,c:1,type:'move'},{r:0,c:2,type:'move'},{r:1,c:0,type:'move'},{r:1,c:2,type:'move'},{r:2,c:0,type:'move'},{r:2,c:1,type:'move'},{r:2,c:2,type:'move'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">킹 (K)</strong><br><span style="font-size:.85rem;color:#c8b890;">8방향 1칸. 강급 없음.</span></div></div>` +
-
-    (!isBasic?
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(7,[{r:3,c:3,type:'piece',piece:'C',color:'w'},{r:0,c:3,type:'cannon-dot'},{r:1,c:3,type:'cannon-dot'},{r:2,c:3,type:'cannon-dot'},{r:4,c:3,type:'cannon-dot'},{r:5,c:3,type:'cannon-dot'},{r:6,c:3,type:'cannon-dot'},{r:3,c:0,type:'cannon-dot'},{r:3,c:1,type:'cannon-dot'},{r:3,c:2,type:'cannon-dot'},{r:3,c:4,type:'cannon-dot'},{r:3,c:5,type:'cannon-dot'},{r:3,c:6,type:'cannon-dot'},{r:0,c:0,type:'cannon-dot'},{r:1,c:1,type:'cannon-dot'},{r:2,c:2,type:'cannon-dot'},{r:4,c:4,type:'cannon-dot'},{r:5,c:5,type:'cannon-dot'},{r:6,c:6,type:'cannon-dot'},{r:0,c:6,type:'cannon-dot'},{r:1,c:5,type:'cannon-dot'},{r:2,c:4,type:'cannon-dot'},{r:4,c:2,type:'cannon-dot'},{r:5,c:1,type:'cannon-dot'},{r:6,c:0,type:'cannon-dot'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">포 (C) — 이동</strong><br><span style="font-size:.85rem;color:#c8b890;">8방향 슬라이드. 기물 만나면 정지. <strong style="color:#e05050;">이동으로 캡처 불가.</strong></span><br><span style="font-size:.78rem;color:#906840;">파란 점 = 이동 가능 칸</span></div></div>` +
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(7,[{r:6,c:0,type:'piece',piece:'C',color:'w'},{r:5,c:1,type:'cannon-path'},{r:4,c:2,type:'cannon-path'},{r:3,c:3,type:'cannon-path'},{r:2,c:4,type:'cannon-cap'},{r:2,c:4,type:'piece',piece:'R',color:'b'},{r:1,c:5,type:'cannon-land'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">포 (C) — 캡처</strong><br><span style="font-size:.85rem;color:#c8b890;">경로가 완전히 비어있을 때, 상대 기물을 뛰어넘어 바로 다음 1칸에 착지하며 포획. 착지 칸이 막히면 캡처 불가.</span><br><span style="font-size:.78rem;color:#906840;">파란=이동경로, 빨간=상대기물, 노란=착지칸</span></div></div>` +
-    `<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:6px;">` +
-    `<div style="flex-shrink:0;">${miniBoard(3,[{r:2,c:0,type:'piece',piece:'FC',color:'w'}])}</div>` +
-    `<div><strong style="color:#e8d5b0;">고정 포탑 (강급된 포)</strong><br><span style="font-size:.85rem;color:#c8b890;">이동 불가. 캡처 방식은 포와 동일.</span></div></div>`
-    :'')
-  );
-
-  html+=isec('승급 (Promotion)',
-    ip('폰이 <strong>전진하여</strong> 끝 랭크 도달 시에만 승급 가능.') +
-    ip(`승급 가능 기물: <strong style="color:#e8d5b0;">${isBasic?'용마, 룩, 나이트, 만':'용마, 룩, 나이트, 포'}</strong>`) +
-    inote('강급으로 생성된 폰은 승급 불가. 끝 랭크에서 생성된 경우 이동 자체가 불가능.')
-  );
-
-  return html;
+    cont.appendChild(sec);
+  }
 }
+
 
 function openOpeningModal() {
   document.getElementById('opening-modal-content').innerHTML = buildOpeningContent();
@@ -909,16 +1106,27 @@ function buildOpeningContent() {
   return html;
 }
 
-function openInfoModal() {
-  document.getElementById('info-content').innerHTML=buildInfoContent();
-  document.getElementById('info-modal').style.display='flex';
+document.getElementById('rulesBtn').onclick = openPieceModal;
+document.getElementById('piece-close').onclick = closePieceModal;
+
+// ===== 전역 테마 (심플/브라운, localStorage로 게임 간 공유) =====
+const THEME_KEY = 'newchess-theme';
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelectorAll('#theme-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.themeBtn === t);
+  });
 }
-function closeInfoModal() {
-  document.getElementById('info-modal').style.display='none';
-}
+applyTheme(localStorage.getItem(THEME_KEY) || 'brown');
+document.querySelectorAll('#theme-toggle button').forEach(btn => {
+  btn.onclick = () => {
+    const t = btn.dataset.themeBtn;
+    localStorage.setItem(THEME_KEY, t);
+    applyTheme(t);
+  };
+});
 
 // ── 시작 ──────────────────────────────────────────────────────────────────
-renderLegend();
 initBoard();
 renderBoard();
 updateStatus();
