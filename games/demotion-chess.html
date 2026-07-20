@@ -7,7 +7,6 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
   :root {
-    --board-border: #2a1005;
     --highlight: rgba(255,220,50,0.5);
     --valid: rgba(60,180,60,0.35); --capture: rgba(200,50,50,0.45);
   }
@@ -47,10 +46,10 @@
   .row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
   .col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
   .mid-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .coords-row { display:flex; margin-top:4px; }
+  .coords-row { display:flex; margin-top:0; }
   .coord-label { text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
   .rank-label { width:24px; text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
-  #board { display:grid; border:3px solid var(--board-border); box-shadow:0 0 40px rgba(0,0,0,.8); }
+  #board { display:grid; border:2px solid var(--border); box-shadow:0 0 40px rgba(0,0,0,.8); }
   .cell { display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
   .cell.light { background:var(--light); } .cell.dark { background:var(--dark); }
   .cell.selected { background:var(--highlight) !important; }
@@ -169,7 +168,7 @@
   </div>
 
   <div class="mid-col">
-    <div style="display:flex;gap:4px;align-items:flex-start;">
+    <div style="display:flex;align-items:flex-start;">
       <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
       <div>
         <div id="board"></div>

@@ -83,7 +83,7 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 .cell.valid-capture { background: #7a1e1e !important; }
 .cell.check-cell    { background: #9a1010 !important; }
 
-#file-labels { display: grid; grid-template-columns: repeat(10, 48px); margin-top: 4px; }
+#file-labels { display: grid; grid-template-columns: repeat(10, 48px); margin-top: 0; }
 #file-labels span { font-size: 10px; color: var(--text-dim); text-align: center; }
 
 /* 우측 패널 */
@@ -99,9 +99,8 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 #ai-box {
   background: var(--panel-bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 10px;
-  display: flex; flex-direction: column; gap: 6px;
 }
-#ai-thinking { font-size: 10px; color: var(--accent); min-height: 14px; text-align: center; }
+#ai-thinking { font-size: 10px; color: var(--accent); min-height: 14px; text-align: center; margin-top: 6px; }
 button {
   background: var(--btn-bg); color: var(--accent); border: 1px solid var(--btn-border);
   padding: 8px 14px; cursor: pointer; font-size: 13px; border-radius: 6px;
@@ -224,7 +223,7 @@ button:hover { background: var(--btn-accent-bg); }
   </div>
 
   <div class="mid-col">
-    <div style="display:flex;gap:4px;align-items:flex-start;">
+    <div style="display:flex;align-items:flex-start;">
       <div id="rank-labels"></div>
       <div id="board-col">
         <div id="board"></div>
