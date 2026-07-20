@@ -44,7 +44,7 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 .row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
 .col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
 .mid-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
-.panel{ background:var(--panel-bg); border:1px solid var(--border); border-radius:6px; padding:10px 12px; }
+.panel{ background:var(--panel-bg); border:1px solid var(--border); border-radius:8px; padding:10px; }
 .panel h3{ font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
 .captured-row{ display:flex; flex-wrap:wrap; gap:2px; font-size:20px; min-height:26px; }
 
@@ -88,32 +88,24 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 
 /* 우측 패널 */
 #turn-box {
-  background: var(--panel-bg); border: 1px solid var(--accent-border);
-  border-radius: 6px; padding: 10px 12px; text-align: center;
+  background: var(--panel-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px; text-align: center;
 }
 #turn-indicator { font-size: 14px; font-weight: bold; color: var(--accent); }
 #status-bar { font-size: 11px; color: var(--text-dim); margin-top: 4px; min-height: 14px; }
 
 #rules-box {
   background: var(--panel-bg); border: 1px solid var(--border);
-  border-radius: 6px; padding: 10px 12px; flex: 1;
-  overflow-y: auto;
+  border-radius: 8px; padding: 10px;
 }
-#rules-box h4 { font-size: 12px; color: var(--accent); margin-bottom: 6px; }
 #rules-box p, #rules-box li { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
 #rules-box ul { padding-left: 14px; }
 
-#btn-box {
-  background: var(--panel-bg); border: 1px solid var(--border);
-  border-radius: 6px; padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 6px;
-}
 #ai-box {
   background: var(--panel-bg); border: 1px solid var(--border);
-  border-radius: 6px; padding: 10px 12px;
+  border-radius: 8px; padding: 10px;
   display: flex; flex-direction: column; gap: 6px;
 }
-#ai-box h4 { font-size: 11px; color: var(--accent); margin-bottom: 2px; }
 .ai-toggle {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 11px; color: var(--text-dim);
@@ -127,9 +119,9 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 .toggle-btn:hover { opacity: 0.85; }
 #ai-thinking { font-size: 10px; color: var(--accent); min-height: 14px; text-align: center; }
 button {
-  background: var(--btn-bg); color: var(--accent); border: 1px solid var(--accent-border);
-  padding: 6px 10px; cursor: pointer; font-size: 12px; border-radius: 4px;
-  width: 100%; font-family: var(--font-family);
+  background: var(--btn-bg); color: var(--accent); border: 1px solid var(--btn-border);
+  padding: 8px 14px; cursor: pointer; font-size: 13px; border-radius: 6px;
+  font-family: var(--font-family);
 }
 button:hover { background: var(--btn-accent-bg); }
 
@@ -219,7 +211,7 @@ button:hover { background: var(--btn-accent-bg); }
 
 <div class="row3">
   <div class="col-left">
-    <div id="turn-box">
+    <div id="turn-box" class="panel">
       <div id="turn-indicator">백(White) 차례</div>
       <div id="status-bar"></div>
     </div>
@@ -229,8 +221,8 @@ button:hover { background: var(--btn-accent-bg); }
     </div>
     <button onclick="resetGame()">새 게임</button>
     <button onclick="undoMove()">되돌리기</button>
-    <div id="ai-box">
-      <h4>AI 설정</h4>
+    <div id="ai-box" class="panel">
+      <h3>AI 설정</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:11px; margin-bottom:6px;">
         <label style="display:flex; align-items:center; gap:4px;">
           <input type="radio" name="aiDepth" value="4"> 깊이4
@@ -270,7 +262,7 @@ button:hover { background: var(--btn-accent-bg); }
       <h3>백에게 잡힌 기물</h3>
       <div class="captured-row" id="capBlack"></div>
     </div>
-    <div id="rules-box">
+    <div id="rules-box" class="panel">
       <div style="font-size:10px;color:#888;">
         <div style="color:#d4a843;font-size:11px;margin-bottom:4px;">승리 조건</div>
         <div>• 체크메이트</div>
