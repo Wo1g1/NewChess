@@ -5,12 +5,7 @@
 <title>10x10 변형 체스</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=Crimson+Text:ital,wght@0,400;0,600&display=swap');
-  /* 실제 보드 색은 테마와 무관하게 항상 고정 */
-  :root{
-    --light-sq:#eeeed2;
-    --dark-sq:#769656;
-  }
-  /* 전역 테마 토큰 — 심플(기본) */
+  /* 전역 테마 토큰 — 심플(기본). 보드 타일색도 테마를 따라감(초록 계열) */
   :root, html[data-theme="simple"]{
     --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
     --accent:#9ccc65; --accent-border:#8fbc5a;
@@ -19,8 +14,9 @@
     --modal-bg:#1e1e1e; --modal-border:#8fbc5a;
     --log-bg:#2a2a2a; --log-border:#444; --log-text:#999;
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --light-sq:#eeeed2; --dark-sq:#769656;
   }
-  /* 전역 테마 토큰 — 브라운 */
+  /* 전역 테마 토큰 — 브라운. 보드 타일색도 테마를 따라감(갈색 계열) */
   html[data-theme="brown"]{
     --bg:#1c0e05; --panel-bg:#2a1508; --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
     --accent:#c9a84c; --accent-border:#c9a84c;
@@ -29,6 +25,7 @@
     --modal-bg:#1c0e05; --modal-border:#c9a84c;
     --log-bg:rgba(255,255,255,.03); --log-border:#3a2010; --log-text:#a08060;
     --font-family:'Crimson Text', Georgia, serif;
+    --light-sq:#e8d5b0; --dark-sq:#7a4a2a;
   }
   body{
     font-family: var(--font-family);
@@ -42,11 +39,6 @@
     gap:16px;
   }
   h1{font-size:18px; font-weight:500; margin:0;}
-  #theme-toggle{ display:flex; gap:4px; }
-  #theme-toggle button{
-    flex:1; font-size:11px; padding:6px 4px;
-  }
-  #theme-toggle button.active{ background:var(--btn-accent-bg); border-color:var(--accent-border); color:var(--accent); }
   #status{
     font-size:15px;
     padding:8px 16px;
@@ -222,10 +214,6 @@
 <body>
 
 <h1>10×10 변형 체스 (수동 대국)</h1>
-<div id="theme-toggle">
-  <button data-theme-btn="simple">심플</button>
-  <button data-theme-btn="brown">브라운</button>
-</div>
 <div id="status">백 차례</div>
 
 <div class="main">
@@ -991,23 +979,13 @@ buildBoardDom();
 render();
 renderLog();
 
-// ===== 전역 테마 (심플/브라운, localStorage로 게임 간 공유) =====
+// ===== 전역 테마 (심플/브라운) — 토글은 허브에만 있고, 여기서는 반영만 =====
 const THEME_KEY = 'newchess-theme';
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t);
-  document.querySelectorAll('#theme-toggle button').forEach(b => {
-    b.classList.toggle('active', b.dataset.themeBtn === t);
-  });
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'simple');
-document.querySelectorAll('#theme-toggle button').forEach(btn => {
-  btn.onclick = () => {
-    const t = btn.dataset.themeBtn;
-    localStorage.setItem(THEME_KEY, t);
-    applyTheme(t);
-  };
-});
-// 허브(또는 다른 게임)에서 테마를 바꾼 경우에도 즉시 반영
+// 허브(또는 다른 게임)에서 테마를 바꾼 경우 즉시 반영
 window.addEventListener('storage', (e) => {
   if (e.key === THEME_KEY) applyTheme(e.newValue || 'simple');
 });

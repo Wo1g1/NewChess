@@ -6,23 +6,23 @@
 <title>Demotion Chess</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
-  /* 실제 보드 색은 테마와 무관하게 항상 고정 (강급체스 자체 고유 색) */
   :root {
-    --light: #e8d5b0; --dark: #7a4a2a; --board-border: #2a1005;
+    --board-border: #2a1005;
     --highlight: rgba(255,220,50,0.5);
     --valid: rgba(60,180,60,0.35); --capture: rgba(200,50,50,0.45);
   }
-  /* 전역 테마 토큰 — 브라운(기본, 강급체스 자체 룩) */
+  /* 전역 테마 토큰 — 브라운(기본). 보드 타일색도 테마를 따라감(갈색 계열, 강급체스 자체 룩) */
   :root, html[data-theme="brown"]{
     --bg:#1c0e05; --panel-bg:rgba(255,255,255,.04); --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
     --accent:#c9a84c; --accent-border:#c9a84c;
     --btn-bg:transparent; --btn-border:#5a3a18; --btn-accent-bg:rgba(201,168,76,.18);
     --tab-inactive-bg:transparent; --tab-inactive-border:#5a3a18; --tab-inactive-text:#806040;
-    --modal-bg:#1e0e05; --modal-border:#c9a84c;
+    --modal-bg:#1c0e05; --modal-border:#c9a84c;
     --log-bg:transparent; --log-border:transparent; --log-text:#a08060;
     --font-heading:'Cinzel',serif; --font-body:'Crimson Text',serif;
+    --light:#e8d5b0; --dark:#7a4a2a;
   }
-  /* 전역 테마 토큰 — 심플 */
+  /* 전역 테마 토큰 — 심플. 보드 타일색도 테마를 따라감(초록 계열) */
   html[data-theme="simple"]{
     --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
     --accent:#9ccc65; --accent-border:#8fbc5a;
@@ -31,6 +31,7 @@
     --modal-bg:#1e1e1e; --modal-border:#8fbc5a;
     --log-bg:#2a2a2a; --log-border:#444; --log-text:#999;
     --font-heading:-apple-system,sans-serif; --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --light:#eeeed2; --dark:#769656;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -44,9 +45,6 @@
   h1 { font-family:var(--font-heading); font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); margin-bottom:4px; }
   html[data-theme="brown"] h1{ text-shadow:0 0 30px rgba(201,168,76,.4); }
   .subtitle { font-style:italic; font-size:1rem; color:var(--text-dim); margin-bottom:10px; letter-spacing:.05em; }
-  #theme-toggle { display:flex; gap:4px; margin-bottom:16px; }
-  #theme-toggle button { flex:1; font-size:.7rem; padding:6px 10px; width:auto; }
-  #theme-toggle button.active { background:var(--btn-accent-bg); border-color:var(--accent-border); color:var(--accent); }
   .game-wrap { display:flex; gap:28px; align-items:flex-start; }
   .board-wrap { display:flex; flex-direction:column; align-items:center; }
   .coords-row { display:flex; margin-bottom:4px; padding-left:28px; }
@@ -152,10 +150,6 @@
 <body>
 <h1>DEMOTION CHESS</h1>
 <p class="subtitle">기물을 잡으면 강급당한다</p>
-<div id="theme-toggle">
-  <button data-theme-btn="simple">심플</button>
-  <button data-theme-btn="brown">브라운</button>
-</div>
 
 <div class="game-wrap">
   <div class="board-wrap">
@@ -1109,23 +1103,13 @@ function buildOpeningContent() {
 document.getElementById('rulesBtn').onclick = openPieceModal;
 document.getElementById('piece-close').onclick = closePieceModal;
 
-// ===== 전역 테마 (심플/브라운, localStorage로 게임 간 공유) =====
+// ===== 전역 테마 (심플/브라운) — 토글은 허브에만 있고, 여기서는 반영만 =====
 const THEME_KEY = 'newchess-theme';
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t);
-  document.querySelectorAll('#theme-toggle button').forEach(b => {
-    b.classList.toggle('active', b.dataset.themeBtn === t);
-  });
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'brown');
-document.querySelectorAll('#theme-toggle button').forEach(btn => {
-  btn.onclick = () => {
-    const t = btn.dataset.themeBtn;
-    localStorage.setItem(THEME_KEY, t);
-    applyTheme(t);
-  };
-});
-// 허브(또는 다른 게임)에서 테마를 바꾼 경우에도 즉시 반영
+// 허브(또는 다른 게임)에서 테마를 바꾼 경우 즉시 반영
 window.addEventListener('storage', (e) => {
   if (e.key === THEME_KEY) applyTheme(e.newValue || 'brown');
 });
