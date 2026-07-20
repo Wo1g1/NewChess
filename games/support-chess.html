@@ -41,6 +41,8 @@
   h1{font-size:18px; font-weight:500; line-height:44px; margin:0 0 16px;}
   #status{
     font-size:15px;
+    font-weight:600;
+    color:var(--accent);
     padding:0;
     height:52px;
     display:flex;
@@ -211,8 +213,6 @@
 </head>
 <body>
 
-<h1>10×10 변형 체스 (수동 대국)</h1>
-
 <div class="row3">
   <div class="col-left">
     <div id="status">백 차례</div>
@@ -247,6 +247,7 @@
   </div>
 
   <div class="col-right">
+    <div style="height:52px;box-sizing:border-box;" aria-hidden="true"></div>
     <div class="panel">
       <h3>백에게 잡힌 흑 기물</h3>
       <div class="captured-row" id="capBlack"></div>
