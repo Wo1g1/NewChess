@@ -41,7 +41,6 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-family: var(--font-body); color: var(--text); padding: 20px;
   }
-  html[data-theme="brown"] body{ background-image: radial-gradient(ellipse at 50% 0%, #3a1a08 0%, #1c0e05 70%); }
   h1 { font-family:var(--font-heading); font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); margin-bottom:4px; }
   html[data-theme="brown"] h1{ text-shadow:0 0 30px rgba(201,168,76,.4); }
   .subtitle { font-style:italic; font-size:1rem; color:var(--text-dim); margin-bottom:10px; letter-spacing:.05em; }
@@ -742,6 +741,7 @@ function showPromotionModal(color){
       board[pp.r][pp.c]={...board[pp.r][pp.c],type:opt.type};
       pendingPromotion=null;
       document.getElementById('promotion-modal').classList.remove('active');
+      notifyModal(false);
       const S=getBoardSize(); const files='abcdefgh'.slice(0,S);
       const pi={'K':'K','Q':'Q','R':'R','N':'N','C':'C','FC':'FC','Mann':'M','Wazir':'W'}[pp.piece.type]??'';
       const pf=pp.piece.type==='P'?'':pi;
@@ -755,11 +755,12 @@ function showPromotionModal(color){
     container.appendChild(btn);
   });
   document.getElementById('promotion-modal').classList.add('active');
+  notifyModal(true);
 }
 
 function undoMove(){
   if(history.length===0) return;
-  if(pendingPromotion){document.getElementById('promotion-modal').classList.remove('active');pendingPromotion=null;}
+  if(pendingPromotion){document.getElementById('promotion-modal').classList.remove('active');pendingPromotion=null;notifyModal(false);}
   const prev=history.pop();
   board=prev.board;turn=prev.turn;moveCount=prev.moveCount;gameOver=prev.gameOver;
   capturedByWhite=prev.capturedByWhite;capturedByBlack=prev.capturedByBlack;
@@ -926,9 +927,11 @@ function openPieceModal(){
   document.getElementById('piece-modal').classList.add('show');
   renderPieceTabs();
   renderPieceContent(activePieceTab);
+  notifyModal(true);
 }
 function closePieceModal(){
   document.getElementById('piece-modal').classList.remove('show');
+  notifyModal(false);
 }
 
 function renderPieceTabs(){
@@ -1013,9 +1016,11 @@ function renderPieceContent(key){
 function openOpeningModal() {
   document.getElementById('opening-modal-content').innerHTML = buildOpeningContent();
   document.getElementById('opening-modal').style.display = 'flex';
+  notifyModal(true);
 }
 function closeOpeningModal() {
   document.getElementById('opening-modal').style.display = 'none';
+  notifyModal(false);
 }
 
 function openingMiniBoard(moves) {
@@ -1102,6 +1107,11 @@ function buildOpeningContent() {
 
 document.getElementById('rulesBtn').onclick = openPieceModal;
 document.getElementById('piece-close').onclick = closePieceModal;
+
+// 모달이 열리고 닫힐 때 허브 상단(헤더/네비)도 함께 어둡게 처리하도록 알림
+function notifyModal(open){
+  try{ window.parent.postMessage({type:'newchess-modal', open}, '*'); }catch(e){}
+}
 
 // ===== 전역 테마 (심플/브라운) — 토글은 허브에만 있고, 여기서는 반영만 =====
 const THEME_KEY = 'newchess-theme';

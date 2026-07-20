@@ -563,9 +563,11 @@ function openPieceModal() {
   document.getElementById('piece-modal').classList.add('show');
   renderPieceTabs();
   renderPieceContent(activePieceTab);
+  notifyModal(true);
 }
 function closePieceModal() {
   document.getElementById('piece-modal').classList.remove('show');
+  notifyModal(false);
 }
 
 function renderPieceTabs() {
@@ -1042,6 +1044,7 @@ function resetGame() {
   aiThinkingFor = null;
   document.getElementById('ai-thinking').textContent = '';
   document.getElementById('promotion-modal').classList.remove('show');
+  notifyModal(false);
   moveCount = 1;
   moveLog = [];
   renderLog();
@@ -1203,6 +1206,7 @@ function showPromotionModal(color) {
       board[promotionPending.row][promotionPending.col].type = t;
       promotionPending = null;
       modal.classList.remove('show');
+      notifyModal(false);
       updateCampCount();
       checkEndgame();
       render();
@@ -1211,6 +1215,7 @@ function showPromotionModal(color) {
     choices.appendChild(btn);
   }
   modal.classList.add('show');
+  notifyModal(true);
 }
 
 function updateCampCount() {
@@ -1290,6 +1295,7 @@ function undoMove() {
   moveCount = prev.moveCount; moveLog = prev.moveLog;
   gameOver = false; selected = null; promotionPending = null;
   document.getElementById('promotion-modal').classList.remove('show');
+  notifyModal(false);
   renderLog(); setStatus(''); render();
 }
 
@@ -1466,6 +1472,11 @@ function movesCannon(col,row,b,color,moves){
 }
 
 resetGame();
+
+// 모달이 열리고 닫힐 때 허브 상단(헤더/네비)도 함께 어둡게 처리하도록 알림
+function notifyModal(open){
+  try{ window.parent.postMessage({type:'newchess-modal', open}, '*'); }catch(e){}
+}
 
 // ===== 전역 테마 (심플/브라운) — 토글은 허브에만 있고, 여기서는 반영만 =====
 const THEME_KEY = 'newchess-theme';
