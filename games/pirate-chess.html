@@ -53,7 +53,7 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
   height: 480px;
 }
 #rank-labels span {
-  font-size: 10px; color: var(--text-dim); width: 16px; text-align: center;
+  font-size: 11px; color: var(--text-dim); width: 20px; text-align: center;
   height: 48px; line-height: 48px;
 }
 #board-col { display: flex; flex-direction: column; align-items: center; }
@@ -83,7 +83,7 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 .cell.check-cell    { background: #9a1010 !important; }
 
 #file-labels { display: grid; grid-template-columns: repeat(10, 48px); margin-top: 0; }
-#file-labels span { font-size: 10px; color: var(--text-dim); text-align: center; }
+#file-labels span { font-size: 11px; color: var(--text-dim); text-align: center; }
 
 /* 우측 패널 */
 #turn-box {
@@ -121,8 +121,10 @@ button:hover { background: var(--btn-accent-bg); }
   display: none; position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.75);
-  align-items: center; justify-content: center; z-index: 100;
+  align-items: center; justify-content: center;
 }
+#promotion-modal { z-index: 100; }
+#piece-modal { z-index: 150; }
 #promotion-modal.show, #piece-modal.show { display: flex; }
 #piece-modal-box {
   background: var(--modal-bg); border: 2px solid var(--modal-border);
