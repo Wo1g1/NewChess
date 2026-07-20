@@ -38,14 +38,15 @@
     background: var(--bg);
     background-image: none;
     min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center;
     font-family: var(--font-body); color: var(--text); padding: 20px;
   }
-  h1 { font-family:var(--font-heading); font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); margin-bottom:4px; }
+  h1 { font-family:var(--font-heading); font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); line-height:44px; margin:0 0 16px; }
   html[data-theme="brown"] h1{ text-shadow:0 0 30px rgba(201,168,76,.4); }
-  .subtitle { font-style:italic; font-size:1rem; color:var(--text-dim); margin-bottom:10px; letter-spacing:.05em; }
-  .game-wrap { display:flex; gap:28px; align-items:flex-start; }
-  .board-wrap { display:flex; flex-direction:column; align-items:center; }
+  /* 좌/보드/우 3컬럼 공통 레이아웃 (4개 게임 공용 구조) */
+  .row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+  .col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
+  .mid-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
   .coords-row { display:flex; margin-bottom:4px; padding-left:28px; }
   .coord-label { text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
   .rank-label { width:24px; text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
@@ -63,8 +64,7 @@
   .captured-piece.white { color:#fff; text-shadow:0 1px 2px #000; }
   .captured-piece.black { color:#1a0a00; text-shadow:0 1px 1px rgba(255,255,255,.2); }
   .captured-piece.demoted { display:inline-block; transform:scaleY(-1); }
-  /* sidebar */
-  .sidebar { width:220px; display:flex; flex-direction:column; gap:10px; }
+  .captured-row{ display:flex; flex-wrap:wrap; gap:2px; min-height:26px; }
   /* version toggle */
   .version-toggle { display:flex; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
   .version-btn { flex:1; font-family:var(--font-heading); font-size:.72rem; letter-spacing:.08em; padding:7px 4px; background:transparent; border:none; color:var(--tab-inactive-text); cursor:pointer; transition:background .15s,color .15s; }
@@ -148,36 +148,42 @@
 </head>
 <body>
 <h1>DEMOTION CHESS</h1>
-<p class="subtitle">기물을 잡으면 강급당한다</p>
 
-<div class="game-wrap">
-  <div class="board-wrap">
+<div class="row3">
+  <div class="col-left">
+    <div class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+      <div id="turn-display">백의 차례</div>
+      <div id="status-msg"></div>
+    </div>
+    <div class="panel">
+      <h3>흑에게 잡힌 기물</h3>
+      <div class="captured-row" id="captured-white"></div>
+    </div>
+    <button onclick="resetGame()">새 게임</button>
+    <button onclick="undoMove()">무르기 (Undo)</button>
+  </div>
+
+  <div class="mid-col">
     <div class="coords-row" id="file-labels"></div>
     <div style="display:flex">
       <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
       <div id="board"></div>
     </div>
-    <div style="display:flex;margin-top:6px;" id="captured-wrap">
-      <div style="width:24px;flex-shrink:0;"></div>
-      <div id="captured-box" style="display:flex;align-items:center;justify-content:space-between;min-height:30px;padding:3px 8px;background:rgba(235,220,185,.30);border-radius:3px;">
-        <div id="captured-black" style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;"></div>
-        <div id="captured-white" style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:flex-end;"></div>
-      </div>
+    <div class="panel" style="width:480px;">
+      <h3>기보</h3>
+      <div id="log"></div>
     </div>
   </div>
 
-  <div class="sidebar">
-    <!-- 버전 전환 -->
+  <div class="col-right">
     <div class="version-toggle">
       <button class="version-btn active" id="btn-basic" onclick="switchVersion('basic')">기본 (6×6)</button>
       <button class="version-btn" id="btn-extended" onclick="switchVersion('extended')">확장 (8×8)</button>
     </div>
-
-    <div class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
-      <div id="turn-display">백의 차례</div>
-      <div id="status-msg"></div>
+    <div class="panel">
+      <h3>백에게 잡힌 기물</h3>
+      <div class="captured-row" id="captured-black"></div>
     </div>
-
     <div class="panel" id="rules-box">
       <h3>규칙</h3>
       <div class="rules-title">승리 조건</div>
@@ -186,22 +192,6 @@
       <div style="margin-top:6px;">폰을 제외한 기물을 캡처하면 캡처한 기물이 강급된다.</div>
     </div>
     <button id="rulesBtn">기물 행마 보기</button>
-
-    <div class="panel" id="opening-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <h3 style="margin-bottom:0;">오프닝</h3>
-        <button id="opening-info-btn" onclick="openOpeningModal()" style="width:22px;height:22px;padding:0;font-size:1rem;line-height:1;border-radius:50%;margin:0;flex-shrink:0;">+</button>
-      </div>
-      <div id="opening-name" style="font-size:.85rem;color:#c9a84c;font-style:italic;min-height:1.2em;">—</div>
-    </div>
-
-    <div class="panel">
-      <h3>기보</h3>
-      <div id="log"></div>
-    </div>
-
-    <button onclick="undoMove()">무르기 (Undo)</button>
-    <button onclick="resetGame()">새 게임</button>
   </div>
 </div>
 
@@ -209,15 +199,6 @@
   <div class="promo-box">
     <h2>승급 선택</h2>
     <div class="promo-options" id="promo-options"></div>
-  </div>
-</div>
-
-<!-- 오프닝 모달 -->
-<div id="opening-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px;">
-  <div style="background:var(--modal-bg);border:2px solid var(--modal-border);border-radius:6px;width:100%;max-width:720px;padding:24px;position:relative;font-family:var(--font-body);color:var(--text);">
-    <button onclick="closeOpeningModal()" style="position:absolute;top:10px;right:12px;width:28px;height:28px;padding:0;font-size:1.1rem;border-radius:50%;margin:0;">✕</button>
-    <h2 style="font-family:var(--font-heading);font-size:1.2rem;color:var(--accent);margin-bottom:16px;">오프닝 목록</h2>
-    <div id="opening-modal-content"></div>
   </div>
 </div>
 
@@ -241,7 +222,6 @@ function switchVersion(v) {
   currentVersion = v;
   document.getElementById('btn-basic').classList.toggle('active', v==='basic');
   document.getElementById('btn-extended').classList.toggle('active', v==='extended');
-  document.getElementById('opening-info-btn').style.display = v==='basic' ? '' : 'none';
   resetGame();
 }
 
@@ -259,86 +239,7 @@ let history = [];
 let capturedByWhite = [];
 let capturedByBlack = [];
 let gameOver = false;
-let moveHistory = [];
-let currentOpening = '—';
 let enPassantTarget = null; // {r, c} 앙파상 가능한 목적 칸 (확장 버전만)
-
-// ── 오프닝 (6×6 전용) ────────────────────────────────────────────────────
-function boardKey(b) {
-  return b.map(row => row.map(cell => cell ? cell.color[0]+cell.type : '.').join('')).join('/');
-}
-
-function makeKey(moves) {
-  const b = Array(6).fill(null).map(() => Array(6).fill(null));
-  b[0] = [{type:'R',color:'b'},{type:'N',color:'b'},{type:'K',color:'b'},{type:'Q',color:'b'},{type:'N',color:'b'},{type:'R',color:'b'}];
-  b[1] = Array(6).fill(null).map(()=>({type:'P',color:'b'}));
-  b[5] = [{type:'R',color:'w'},{type:'N',color:'w'},{type:'K',color:'w'},{type:'Q',color:'w'},{type:'N',color:'w'},{type:'R',color:'w'}];
-  b[4] = Array(6).fill(null).map(()=>({type:'P',color:'w'}));
-  const files='abcdef';
-  for(const mv of moves) {
-    const clean=mv.replace(/^[KQRNMWB]/,'').replace(/[×↓+]/g,'').toLowerCase();
-    const fc=files.indexOf(clean[0]),fr=6-parseInt(clean[1]);
-    const tc=files.indexOf(clean[2]),tr=6-parseInt(clean[3]);
-    if(fc<0||fr<0||tc<0||tr<0) continue;
-    const piece=b[fr][fc]; if(!piece) continue;
-    const cap=b[tr][tc]; let moved={...piece};
-    if(cap&&cap.type!=='P'){
-      const dm={Q:'Mann',R:'Wazir',N:'P',Mann:'Mann',Wazir:'Wazir',K:'K'};
-      const nt=dm[piece.type]??piece.type;
-      if(nt!==piece.type) moved={...piece,type:nt,originalType:piece.type};
-    }
-    b[fr][fc]=null; b[tr][tc]=moved;
-  }
-  return boardKey(b);
-}
-
-const OPENINGS = [
-  [makeKey(['d2d3']),'베리어 오프닝'],
-  [makeKey(['c2c3']),'킹 프론트 피앙케토 오프닝'],
-  [makeKey(['e2e3']),'퀸 사이드 피앙케토 오프닝'],
-  [makeKey(['d2d3','c5c4']),'베리어 카운터 갬빗'],
-  [makeKey(['d2d3','c5c4','c2c3']),'킹즈 센터 갬빗'],
-  [makeKey(['c2c3','c5c4','d2d3']),'킹즈 센터 갬빗'],
-  [makeKey(['d2d3','c5c4','e2e3']),'피앙케토 어택'],
-  [makeKey(['e2e3','c5c4','d2d3']),'피앙케토 어택'],
-  [makeKey(['c2c3','c5c4','d2d3','d5d4']),'센터게임'],
-  [makeKey(['d2d3','c5c4','c2c3','d5d4']),'센터게임'],
-  [makeKey(['c2c3','d5d4','d2d3','c5c4']),'센터게임'],
-  [makeKey(['d2d3','d5d4','c2c3','c5c4']),'센터게임'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3']),'피앙케토 어택'],
-  [makeKey(['e2e3','c5c4','d2d3','c4d3']),'피앙케토 어택'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3','c2d3','d6c5']),'피앙케토 어택 올드 베리에이션'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4']),'피앙케토 어택 메인 라인'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4']),'피앙케토 어택 메인 라인'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6c5']),'피앙케토 어택 메인 라인 나이트 베리에이션'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6c5']),'피앙케토 어택 메인 라인 퀸 베리에이션'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6f4','e3f4','e6f4']),'나이트 어택'],
-  [makeKey(['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6f4','e3f4','d6f4']),'액셀러레이티드 퀸 어택'],
-  [makeKey(['d2d3','c5c4','d3c4']),'베리어 카운터 갬빗 수락'],
-  [makeKey(['d2d3','c5c4','d3c4','b5c4']),'베리어 카운터 갬빗 수락'],
-  [makeKey(['d2d3','c5c4','d3c4','d5c4']),'베리어 카운터 갬빗 수락'],
-  [makeKey(['d2d3','c5c4','d3c4','b5c4','b1c3','d6c5']),'베리어 카운터 갬빗 수락 메인 라인'],
-  [makeKey(['d2d3','c5c4','d3c4','d5c4','b1c3','d6c5']),'베리어 카운터 갬빗 수락 오픈 베리에이션'],
-  [makeKey(['d2d3','c5c4','d3c4','b5c4','c2c3','d6c5']),'베리어 카운터 갬빗 수락 폰 베리에이션'],
-  [makeKey(['d2d3','c5c4','d3c4','d5c4','c2c3','d6c5']),'베리어 카운터 갬빗 수락 슬로우 베리에이션'],
-  [makeKey(['d2d3','c5c4','d3c4','b5c4','c2c3','d5d4']),'센터 더블 갬빗'],
-  [makeKey(['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4']),'오픈 더블 갬빗'],
-  [makeKey(['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4','c3b4','d6b4']),'오픈 더블 갬빗 수락'],
-];
-const OPENING_MAP = new Map(OPENINGS);
-
-function updateOpening() {
-  if(currentVersion!=='basic') return;
-  const key = boardKey(board);
-  const matched = OPENING_MAP.get(key);
-  if(matched) currentOpening = matched;
-  document.getElementById('opening-name').textContent = currentOpening;
-}
-
-function resetOpening() {
-  moveHistory=[]; currentOpening='—';
-  document.getElementById('opening-name').textContent='—';
-}
 
 // ── 초기화 ────────────────────────────────────────────────────────────────
 function initBoard() {
@@ -586,8 +487,6 @@ function renderBoard() {
     d.textContent=S-r; rl.appendChild(d);
   }
 
-  // 잡힌 기물 박스 너비
-  document.getElementById('captured-box').style.width=(S*CS)+'px';
   renderCaptured();
 }
 
@@ -678,7 +577,6 @@ function executeMove(fr,fc,mv){
     capturedByWhite:capturedByWhite.map(p=>({...p})),
     capturedByBlack:capturedByBlack.map(p=>({...p})),
     logHTML:document.getElementById('log').innerHTML,
-    moveHistory:[...moveHistory],currentOpening,
     enPassantTarget,
   });
 
@@ -720,7 +618,6 @@ function executeMove(fr,fc,mv){
   const moveStr=prefix+files[fc]+(S-fr)+(mv.capture?'×':'')+files[mv.c]+(S-mv.r);
   turn=turn==='w'?'b':'w';
   const inCheck=isInCheck(turn);
-  updateOpening();
   addMoveToLog(moveStr,demoted,inCheck);
   selected=null;validMoves=[];
   renderBoard();updateStatus();
@@ -748,7 +645,6 @@ function showPromotionModal(color){
       const ms=pf+files[pp.fc]+(S-pp.fr)+(pp.mv.capture?'×':'')+files[pp.mv.c]+(S-pp.mv.r)+'='+opt.type;
       turn=turn==='w'?'b':'w';
       const inCheck=isInCheck(turn);
-      updateOpening();
       addMoveToLog(ms,pp.demoted,inCheck);
       renderBoard();updateStatus();
     });
@@ -764,10 +660,8 @@ function undoMove(){
   const prev=history.pop();
   board=prev.board;turn=prev.turn;moveCount=prev.moveCount;gameOver=prev.gameOver;
   capturedByWhite=prev.capturedByWhite;capturedByBlack=prev.capturedByBlack;
-  moveHistory=prev.moveHistory;currentOpening=prev.currentOpening;
   enPassantTarget=prev.enPassantTarget;
   document.getElementById('log').innerHTML=prev.logHTML;
-  document.getElementById('opening-name').textContent=currentOpening;
   selected=null;validMoves=[];
   renderBoard();updateStatus();
 }
@@ -779,7 +673,6 @@ function resetGame(){
   capturedByWhite=[];capturedByBlack=[];enPassantTarget=null;
   document.getElementById('log').innerHTML='';
   document.getElementById('status-msg').textContent='';
-  resetOpening();
   renderBoard();updateStatus();
 }
 
@@ -1012,98 +905,6 @@ function renderPieceContent(key){
   }
 }
 
-
-function openOpeningModal() {
-  document.getElementById('opening-modal-content').innerHTML = buildOpeningContent();
-  document.getElementById('opening-modal').style.display = 'flex';
-  notifyModal(true);
-}
-function closeOpeningModal() {
-  document.getElementById('opening-modal').style.display = 'none';
-  notifyModal(false);
-}
-
-function openingMiniBoard(moves) {
-  // 6×6 보드를 해당 수순으로 진행한 후의 포지션을 미니보드로 표시
-  const b = Array(6).fill(null).map(()=>Array(6).fill(null));
-  b[0]=[{type:'R',color:'b'},{type:'N',color:'b'},{type:'K',color:'b'},{type:'Q',color:'b'},{type:'N',color:'b'},{type:'R',color:'b'}];
-  b[1]=Array(6).fill(null).map(()=>({type:'P',color:'b'}));
-  b[5]=[{type:'R',color:'w'},{type:'N',color:'w'},{type:'K',color:'w'},{type:'Q',color:'w'},{type:'N',color:'w'},{type:'R',color:'w'}];
-  b[4]=Array(6).fill(null).map(()=>({type:'P',color:'w'}));
-  const files='abcdef';
-  for(const mv of moves){
-    const clean=mv.replace(/^[KQRNMW]/,'').replace(/[×↓+]/g,'').toLowerCase();
-    const fc=files.indexOf(clean[0]),fr=6-parseInt(clean[1]);
-    const tc=files.indexOf(clean[2]),tr=6-parseInt(clean[3]);
-    if(fc<0||fr<0||tc<0||tr<0) continue;
-    const piece=b[fr][fc]; if(!piece) continue;
-    const cap=b[tr][tc]; let moved={...piece};
-    if(cap&&cap.type!=='P'){
-      const dm={Q:'Mann',R:'Wazir',N:'P',Mann:'Mann',Wazir:'Wazir',K:'K'};
-      const nt=dm[piece.type]??piece.type;
-      if(nt!==piece.type) moved={...piece,type:nt,originalType:piece.type};
-    }
-    b[fr][fc]=null; b[tr][tc]=moved;
-  }
-  // SVG 렌더
-  const cs=22, S=6, W=S*cs, H=S*cs;
-  let svg=`<svg width="${W}" height="${H}" style="border:1px solid #5a3010;display:block;flex-shrink:0;">`;
-  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
-    const x=c*cs,y=r*cs;
-    svg+=`<rect x="${x}" y="${y}" width="${cs}" height="${cs}" fill="${(r+c)%2===0?'#e8d5b0':'#7a4a2a'}"/>`;
-  }
-  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
-    const p=b[r][c]; if(!p) continue;
-    const isW=p.color==='w';
-    const sym={K:isW?'♔':'♚',Q:isW?'♕':'♛',R:isW?'♖':'♜',N:isW?'♘':'♞',P:isW?'♙':'♟',Mann:isW?'♕':'♛',Wazir:isW?'♖':'♜'}[p.type]||'?';
-    const demoted=p.type==='Mann'||p.type==='Wazir';
-    const x=c*cs,y=r*cs;
-    if(demoted){
-      svg+=`<g transform="translate(${x+cs/2},${y+cs/2}) scale(1,-1) translate(${-(x+cs/2)},${-(y+cs/2)})">`;
-      svg+=`<text x="${x+cs/2}" y="${y+cs*.72}" text-anchor="middle" font-size="${cs*.82}" fill="${isW?'#fff':'#1a0a00'}" style="paint-order:stroke;stroke:${isW?'#000':'rgba(255,255,255,.3)'};stroke-width:1px;">${sym}</text>`;
-      svg+=`</g>`;
-    } else {
-      svg+=`<text x="${x+cs/2}" y="${y+cs*.72}" text-anchor="middle" font-size="${cs*.82}" fill="${isW?'#fff':'#1a0a00'}" style="paint-order:stroke;stroke:${isW?'#000':'rgba(255,255,255,.3)'};stroke-width:1px;">${sym}</text>`;
-    }
-  }
-  svg+=`</svg>`;
-  return svg;
-}
-
-const OPENING_LIST = [
-  { name:'베리어 오프닝', moves:['d2d3'] },
-  { name:'킹 프론트 피앙케토 오프닝', moves:['c2c3'] },
-  { name:'퀸 사이드 피앙케토 오프닝', moves:['e2e3'] },
-  { name:'베리어 카운터 갬빗', moves:['d2d3','c5c4'] },
-  { name:'킹즈 센터 갬빗', moves:['d2d3','c5c4','c2c3'] },
-  { name:'피앙케토 어택', moves:['d2d3','c5c4','e2e3'] },
-  { name:'센터게임', moves:['d2d3','c5c4','c2c3','d5d4'] },
-  { name:'베리어 카운터 갬빗 수락 메인 라인', moves:['d2d3','c5c4','d3c4','b5c4','b1c3','d6c5'] },
-  { name:'베리어 카운터 갬빗 수락 오픈 베리에이션', moves:['d2d3','c5c4','d3c4','d5c4','b1c3','d6c5'] },
-  { name:'베리어 카운터 갬빗 수락 폰 베리에이션', moves:['d2d3','c5c4','d3c4','b5c4','c2c3','d6c5'] },
-  { name:'베리어 카운터 갬빗 수락 슬로우 베리에이션', moves:['d2d3','c5c4','d3c4','d5c4','c2c3','d6c5'] },
-  { name:'센터 더블 갬빗', moves:['d2d3','c5c4','d3c4','b5c4','c2c3','d5d4'] },
-  { name:'오픈 더블 갬빗', moves:['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4'] },
-  { name:'오픈 더블 갬빗 수락', moves:['d2d3','c5c4','d3c4','d5c4','c2c3','b5b4','c3b4','d6b4'] },
-  { name:'피앙케토 어택 올드 베리에이션', moves:['d2d3','c5c4','e2e3','c4d3','c2d3','d6c5'] },
-  { name:'피앙케토 어택 메인 라인', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4'] },
-  { name:'피앙케토 어택 메인 라인 나이트 베리에이션', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6c5'] },
-  { name:'피앙케토 어택 메인 라인 퀸 베리에이션', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6c5'] },
-  { name:'나이트 어택', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','d6f4','e3f4','e6f4'] },
-  { name:'액셀러레이티드 퀸 어택', moves:['d2d3','c5c4','e2e3','c4d3','e1d3','e5e4','d3f4','e6f4','e3f4','d6f4'] },
-];
-
-function buildOpeningContent() {
-  let html = '';
-  for(const op of OPENING_LIST){
-    const boardSvg = openingMiniBoard(op.moves);
-    html+=`<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #2a1508;">
-      ${boardSvg}
-      <div style="font-family:'Cinzel',serif;font-size:.85rem;color:#c9a84c;">${op.name}</div>
-    </div>`;
-  }
-  return html;
-}
 
 document.getElementById('rulesBtn').onclick = openPieceModal;
 document.getElementById('piece-close').onclick = closePieceModal;

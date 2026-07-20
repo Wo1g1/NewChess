@@ -36,12 +36,17 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  padding: 16px;
+  padding: 20px;
 }
-h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; margin-bottom: 10px; }
+h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44px; margin:0 0 16px; }
 
-/* 메인 레이아웃: 보드 + 우측 패널 */
-#main-layout { display: flex; gap: 14px; align-items: flex-start; }
+/* 좌/보드/우 3컬럼 공통 레이아웃 (4개 게임 공용 구조) */
+.row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+.col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
+.mid-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+.panel{ background:var(--panel-bg); border:1px solid var(--border); border-radius:6px; padding:10px 12px; }
+.panel h3{ font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
+.captured-row{ display:flex; flex-wrap:wrap; gap:2px; font-size:20px; min-height:26px; }
 
 #rank-labels {
   display: flex; flex-direction: column;
@@ -82,10 +87,6 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; margin-bottom: 
 #file-labels span { font-size: 10px; color: var(--text-dim); text-align: center; }
 
 /* 우측 패널 */
-#side-panel {
-  display: flex; flex-direction: column; gap: 10px;
-  width: 200px; min-height: 500px;
-}
 #turn-box {
   background: var(--panel-bg); border: 1px solid var(--accent-border);
   border-radius: 6px; padding: 10px 12px; text-align: center;
@@ -137,7 +138,7 @@ button:hover { background: var(--btn-accent-bg); }
   margin-top: 10px;
   background: var(--log-bg); border: 1px solid var(--log-border);
   border-radius: 6px; padding: 8px 12px;
-  width: 100%; max-width: 720px;
+  width: 480px;
   max-height: 80px; overflow-y: auto;
 }
 #log { font-size: 11px; color: var(--log-text); font-family: monospace; white-space: pre-wrap; }
@@ -215,32 +216,19 @@ button:hover { background: var(--btn-accent-bg); }
 </head>
 <body>
 <h1>⚓ 해적 체스 (Pirate Chess)</h1>
-<div id="main-layout">
-  <!-- 보드 영역 -->
-  <div style="display:flex;gap:4px;align-items:flex-start;">
-    <div id="rank-labels"></div>
-    <div id="board-col">
-      <div id="board"></div>
-      <div id="file-labels">
-        <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span>
-        <span>f</span><span>g</span><span>h</span><span>i</span><span>j</span>
-      </div>
-    </div>
-  </div>
-  <!-- 우측 패널 -->
-  <div id="side-panel">
+
+<div class="row3">
+  <div class="col-left">
     <div id="turn-box">
       <div id="turn-indicator">백(White) 차례</div>
       <div id="status-bar"></div>
     </div>
-    <div id="rules-box">
-      <button onclick="openPieceModal()" style="width:100%;margin-bottom:0;">기물 행마 보기</button>
-      <div style="margin-top:8px;font-size:10px;color:#888;">
-        <div style="color:#d4a843;font-size:11px;margin-bottom:4px;">승리 조건</div>
-        <div>• 체크메이트</div>
-        <div>• 선장이 육지에서 2턴 연속 체크 없이 생존</div>
-      </div>
+    <div class="panel">
+      <h3>흑에게 잡힌 기물</h3>
+      <div class="captured-row" id="capWhite"></div>
     </div>
+    <button onclick="resetGame()">새 게임</button>
+    <button onclick="undoMove()">되돌리기</button>
     <div id="ai-box">
       <h4>AI 설정</h4>
       <div style="display:flex; align-items:center; gap:10px; font-size:11px; margin-bottom:6px;">
@@ -261,13 +249,37 @@ button:hover { background: var(--btn-accent-bg); }
       </div>
       <div id="ai-thinking"></div>
     </div>
-    <div id="btn-box">
-      <button onclick="undoMove()">되돌리기</button>
-      <button onclick="resetGame()">새 게임</button>
+  </div>
+
+  <div class="mid-col">
+    <div style="display:flex;gap:4px;align-items:flex-start;">
+      <div id="rank-labels"></div>
+      <div id="board-col">
+        <div id="board"></div>
+        <div id="file-labels">
+          <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span>
+          <span>f</span><span>g</span><span>h</span><span>i</span><span>j</span>
+        </div>
+      </div>
     </div>
+    <div id="log-box"><div id="log"></div></div>
+  </div>
+
+  <div class="col-right">
+    <div class="panel">
+      <h3>백에게 잡힌 기물</h3>
+      <div class="captured-row" id="capBlack"></div>
+    </div>
+    <div id="rules-box">
+      <div style="font-size:10px;color:#888;">
+        <div style="color:#d4a843;font-size:11px;margin-bottom:4px;">승리 조건</div>
+        <div>• 체크메이트</div>
+        <div>• 선장이 육지에서 2턴 연속 체크 없이 생존</div>
+      </div>
+    </div>
+    <button onclick="openPieceModal()">기물 행마 보기</button>
   </div>
 </div>
-<div id="log-box"><div id="log"></div></div>
 <div id="piece-modal">
   <div id="piece-modal-box">
     <button id="piece-close" onclick="closePieceModal()">✕</button>
@@ -315,6 +327,8 @@ const BACK = ['rook','bishop','cannon','knight','queen','king','knight','cannon'
 
 let board, turn, selected, history, gameOver, campCount, campNeedsSea, promotionPending;
 let moveCount, moveLog;
+let capturedByWhite = [];
+let capturedByBlack = [];
 const INITIALS = { rook:'R', bishop:'B', cannon:'C', knight:'N', queen:'Q', king:'K', pawn:'' };
 
 function makeInitialBoard() {
@@ -1040,6 +1054,8 @@ function resetGame() {
   campCount = { W:0, B:0 };
   campNeedsSea = { W:false, B:false };
   promotionPending = null;
+  capturedByWhite = [];
+  capturedByBlack = [];
   if(aiWorker){ aiWorker.terminate(); aiWorker=null; }
   aiThinkingFor = null;
   document.getElementById('ai-thinking').textContent = '';
@@ -1109,6 +1125,9 @@ function render() {
     gameOver ? '게임 종료' : (turn==='W'?'백(White)':'흑(Black)') + ' 차례';
   if(selected) highlightMoves(selected.col, selected.row);
   markChecks();
+
+  document.getElementById('capWhite').textContent = capturedByBlack.map(t => GLYPHS.W[t]).join(' ');
+  document.getElementById('capBlack').textContent = capturedByWhite.map(t => GLYPHS.B[t]).join(' ');
 }
 
 function cellIndex(col, row) {
@@ -1152,7 +1171,7 @@ function handleClick(col, row) {
 }
 
 function doMove(fc, fr, tc, tr) {
-  history.push({ board: JSON.parse(JSON.stringify(board)), turn, campCount: {...campCount}, campNeedsSea: {...campNeedsSea}, moveCount, moveLog: JSON.parse(JSON.stringify(moveLog)) });
+  history.push({ board: JSON.parse(JSON.stringify(board)), turn, campCount: {...campCount}, campNeedsSea: {...campNeedsSea}, moveCount, moveLog: JSON.parse(JSON.stringify(moveLog)), capturedByWhite: [...capturedByWhite], capturedByBlack: [...capturedByBlack] });
   const piece = board[fr][fc];
   let captured = board[tr][tc];
   let locustTarget = null;
@@ -1168,6 +1187,11 @@ function doMove(fc, fr, tc, tr) {
       c+=dc; r+=dr;
     }
     if(locustTarget){ captured=board[locustTarget.row][locustTarget.col]; board[locustTarget.row][locustTarget.col]=null; }
+  }
+
+  if(captured){
+    if(captured.color==='W') capturedByBlack.push(captured.type);
+    else capturedByWhite.push(captured.type);
   }
 
   board[tr][tc] = piece;
@@ -1293,6 +1317,7 @@ function undoMove() {
   const prev = history.pop();
   board = prev.board; turn = prev.turn; campCount = prev.campCount; campNeedsSea = prev.campNeedsSea;
   moveCount = prev.moveCount; moveLog = prev.moveLog;
+  capturedByWhite = prev.capturedByWhite; capturedByBlack = prev.capturedByBlack;
   gameOver = false; selected = null; promotionPending = null;
   document.getElementById('promotion-modal').classList.remove('show');
   notifyModal(false);
