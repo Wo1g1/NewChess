@@ -32,13 +32,13 @@
     background:var(--bg);
     color:var(--text);
     margin:0;
-    padding:24px;
+    padding:20px;
     display:flex;
     flex-direction:column;
     align-items:center;
     gap:16px;
   }
-  h1{font-size:18px; font-weight:500; margin:0;}
+  h1{font-size:18px; font-weight:500; line-height:44px; margin:0 0 16px;}
   #status{
     font-size:15px;
     padding:8px 16px;
@@ -48,11 +48,10 @@
   }
   #status.check{color:#ffb84d;}
   #status.over{color:#ff6b6b; font-weight:600;}
-  .main{
-    display:flex;
-    gap:24px;
-    align-items:flex-start;
-  }
+  /* 좌/보드/우 3컬럼 공통 레이아웃 (4개 게임 공용 구조) */
+  .row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+  .col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
+  .mid-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
   #boardWrap{
     display:grid;
   }
@@ -88,12 +87,6 @@
   }
   .marker.move{background:#3478f6; width:32%; height:32%;}
   .marker.capture{background:none; width:78%; height:78%; border:4px solid #e63c3c; border-radius:50%; box-sizing:border-box;}
-  .side{
-    width:170px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-  }
   .panel{
     background:var(--panel-bg);
     border:1px solid var(--border);
@@ -153,7 +146,7 @@
     margin-top:10px;
     background:var(--log-bg); border:1px solid var(--log-border);
     border-radius:6px; padding:8px 12px;
-    width:100%; max-width:720px;
+    width:480px;
     max-height:80px; overflow-y:auto;
   }
   #log{ font-size:11px; color:var(--log-text); font-family:monospace; white-space:pre-wrap; }
@@ -214,17 +207,16 @@
 <body>
 
 <h1>10×10 변형 체스 (수동 대국)</h1>
-<div id="status">백 차례</div>
 
-<div class="main">
-  <div class="side">
+<div class="row3">
+  <div class="col-left">
+    <div id="status">백 차례</div>
     <div class="panel">
       <h3>흑에게 잡힌 백 기물</h3>
       <div class="captured-row" id="capWhite"></div>
     </div>
     <button id="resetBtn">새 게임</button>
     <button id="undoBtn">되돌리기</button>
-    <button id="rulesBtn">기물 행마 보기</button>
     <div class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -244,17 +236,26 @@
     </div>
   </div>
 
-  <div id="boardWrap"></div>
+  <div class="mid-col">
+    <div id="boardWrap"></div>
+    <div id="log-box"><div id="log"></div></div>
+  </div>
 
-  <div class="side">
+  <div class="col-right">
     <div class="panel">
       <h3>백에게 잡힌 흑 기물</h3>
       <div class="captured-row" id="capBlack"></div>
     </div>
+    <div class="panel">
+      <h3>규칙</h3>
+      <div style="color:var(--accent); margin-bottom:4px; font-size:12px;">승리 조건</div>
+      <div style="font-size:11px; color:var(--text-dim); line-height:1.6;">
+        • 체크메이트<br>• 스테일메이트(만든 쪽이 승리)
+      </div>
+    </div>
+    <button id="rulesBtn">기물 행마 보기</button>
   </div>
 </div>
-
-<div id="log-box"><div id="log"></div></div>
 
 <div id="piece-modal">
   <div id="piece-modal-box">
