@@ -240,7 +240,7 @@
       <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
         <input type="checkbox" id="aiBlackToggle"> 흑 AI
       </label>
-      <div id="ai-thinking" aria-hidden="true"></div>
+      <div id="ai-thinking"></div>
     </div>
   </div>
 
@@ -955,13 +955,14 @@ function maybeTriggerAI(){
   if(aiEnabled[turn]){
     aiThinking = true;
     const turnLabel = (turn==='w') ? '백' : '흑';
-    document.getElementById('status').textContent = turnLabel + ' AI 생각 중...';
+    document.getElementById('ai-thinking').textContent = turnLabel + ' AI 생각 중...';
     setTimeout(runAIMove, 50);
   }
 }
 
 function runAIMove(){
   aiThinking = false;
+  document.getElementById('ai-thinking').textContent = '';
   if(gameOver || pendingPromotion) return;
   const mv = findBestMove(board, turn, SEARCH_DEPTH);
   if(!mv){ render(); return; }
