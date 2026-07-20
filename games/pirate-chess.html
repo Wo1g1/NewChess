@@ -93,7 +93,7 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
 }
-#turn-indicator { font-size: 14px; font-weight: bold; color: var(--accent); }
+#turn-indicator { font-size: 15px; font-weight: 600; color: var(--accent); }
 #status-bar { font-size: 11px; color: var(--text-dim); margin-top: 4px; min-height: 14px; }
 
 #ai-box {
@@ -101,17 +101,6 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
   border-radius: 8px; padding: 10px;
   display: flex; flex-direction: column; gap: 6px;
 }
-.ai-toggle {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 11px; color: var(--text-dim);
-}
-.toggle-btn {
-  background: #2a2a2a; color: #888; border: 1px solid #555;
-  padding: 3px 10px; cursor: pointer; font-size: 11px; border-radius: 12px;
-  width: auto; transition: all 0.15s;
-}
-.toggle-btn.on { background: #1a4a1a; color: #6f6; border-color: #4a8a4a; }
-.toggle-btn:hover { opacity: 0.85; }
 #ai-thinking { font-size: 10px; color: var(--accent); min-height: 14px; text-align: center; }
 button {
   background: var(--btn-bg); color: var(--accent); border: 1px solid var(--btn-border);
@@ -202,12 +191,10 @@ button:hover { background: var(--btn-accent-bg); }
 </style>
 </head>
 <body>
-<h1>⚓ 해적 체스 (Pirate Chess)</h1>
-
 <div class="row3">
   <div class="col-left">
     <div id="turn-box" class="panel">
-      <div id="turn-indicator">백(White) 차례</div>
+      <div id="turn-indicator">백 차례</div>
       <div id="status-bar"></div>
     </div>
     <div class="panel">
@@ -217,8 +204,8 @@ button:hover { background: var(--btn-accent-bg); }
     <button onclick="resetGame()">새 게임</button>
     <button onclick="undoMove()">되돌리기</button>
     <div id="ai-box" class="panel">
-      <h3>AI 설정</h3>
-      <div style="display:flex; align-items:center; gap:10px; font-size:11px; margin-bottom:6px;">
+      <h3>AI (3초 제한)</h3>
+      <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
         <label style="display:flex; align-items:center; gap:4px;">
           <input type="radio" name="aiDepth" value="4"> 깊이4
         </label>
@@ -226,14 +213,12 @@ button:hover { background: var(--btn-accent-bg); }
           <input type="radio" name="aiDepth" value="5" checked> 깊이5
         </label>
       </div>
-      <div class="ai-toggle">
-        <span>백(W) AI</span>
-        <button class="toggle-btn" id="ai-w-btn" onclick="toggleAI('W')">OFF</button>
-      </div>
-      <div class="ai-toggle">
-        <span>흑(B) AI</span>
-        <button class="toggle-btn" id="ai-b-btn" onclick="toggleAI('B')">OFF</button>
-      </div>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:6px;">
+        <input type="checkbox" id="aiWhiteToggle"> 백 AI
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+        <input type="checkbox" id="aiBlackToggle"> 흑 AI
+      </label>
       <div id="ai-thinking"></div>
     </div>
   </div>
@@ -253,6 +238,7 @@ button:hover { background: var(--btn-accent-bg); }
   </div>
 
   <div class="col-right">
+    <div style="height:52px;box-sizing:border-box;" aria-hidden="true"></div>
     <div class="panel">
       <h3>백에게 잡힌 기물</h3>
       <div class="captured-row" id="capBlack"></div>
@@ -661,21 +647,20 @@ document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
   };
 });
 
-function toggleAI(color) {
-  aiEnabled[color] = !aiEnabled[color];
-  const btn = document.getElementById('ai-' + color.toLowerCase() + '-btn');
-  btn.textContent = aiEnabled[color] ? 'ON' : 'OFF';
-  btn.classList.toggle('on', aiEnabled[color]);
-  if(!aiEnabled[color] && aiThinkingFor === color) {
+function setAIEnabled(color, enabled) {
+  aiEnabled[color] = enabled;
+  if(!enabled && aiThinkingFor === color) {
     // 탐색 중 끄면 worker 종료
     if(aiWorker) { aiWorker.terminate(); aiWorker = null; }
     aiThinkingFor = null;
     document.getElementById('ai-thinking').textContent = '';
   }
-  if(aiEnabled[color] && turn === color && !gameOver) {
+  if(enabled && turn === color && !gameOver) {
     setTimeout(() => triggerAI(), 100);
   }
 }
+document.getElementById('aiWhiteToggle').onchange = (e) => setAIEnabled('W', e.target.checked);
+document.getElementById('aiBlackToggle').onchange = (e) => setAIEnabled('B', e.target.checked);
 
 function triggerAI() {
   if(gameOver || !aiEnabled[turn] || aiThinkingFor) return;
@@ -963,7 +948,7 @@ function updateCampAI(nb, mover, campW, campB, needsSeaW, needsSeaB) {
 }
 
 let searchStart = 0;
-const TIME_LIMIT = 9500; // 9.5초
+const TIME_LIMIT = 3000; // 3초 (4개 게임 공통 제한)
 
 function minimax(b, depth, alpha, beta, maximizing, campW, campB, needsSeaW, needsSeaB) {
   if(campW>=3) return 9999;
@@ -1109,7 +1094,7 @@ function render() {
     }
   }
   document.getElementById('turn-indicator').textContent =
-    gameOver ? '게임 종료' : (turn==='W'?'백(White)':'흑(Black)') + ' 차례';
+    gameOver ? '게임 종료' : (turn==='W'?'백':'흑') + ' 차례';
   if(selected) highlightMoves(selected.col, selected.row);
   markChecks();
 
