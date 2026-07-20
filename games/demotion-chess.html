@@ -18,7 +18,7 @@
     --btn-bg:transparent; --btn-border:#5a3a18; --btn-accent-bg:rgba(201,168,76,.18);
     --tab-inactive-bg:transparent; --tab-inactive-border:#5a3a18; --tab-inactive-text:#806040;
     --modal-bg:#1c0e05; --modal-border:#c9a84c;
-    --log-bg:transparent; --log-border:transparent; --log-text:#a08060;
+    --log-bg:rgba(255,255,255,.03); --log-border:#3a2010; --log-text:#a08060;
     --font-heading:'Cinzel',serif; --font-body:'Crimson Text',serif;
     --light:#e8d5b0; --dark:#7a4a2a;
   }
@@ -47,7 +47,7 @@
   .row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
   .col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
   .mid-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .coords-row { display:flex; margin-bottom:4px; padding-left:28px; }
+  .coords-row { display:flex; margin-top:4px; }
   .coord-label { text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
   .rank-label { width:24px; text-align:center; font-family:var(--font-heading); font-size:.75rem; color:var(--text-dim); }
   #board { display:grid; border:3px solid var(--board-border); box-shadow:0 0 40px rgba(0,0,0,.8); }
@@ -74,7 +74,14 @@
   .panel h3 { font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
   #turn-display { font-size:15px; font-weight:600; color:var(--accent); text-align:center; }
   #status-msg { font-style:italic; font-size:.85rem; color:var(--text-dim); text-align:center; }
-  #log { font-size:.82rem; color:var(--log-text); line-height:1.7; max-height:180px; overflow-y:auto; word-break:break-all; font-family:var(--font-body); }
+  #log-box{
+    margin-top:10px;
+    background:var(--log-bg); border:1px solid var(--log-border);
+    border-radius:6px; padding:8px 12px;
+    width:480px; box-sizing:border-box;
+    max-height:80px; overflow-y:auto;
+  }
+  #log{ font-size:11px; color:var(--log-text); font-family:monospace; white-space:pre-wrap; }
   #log::-webkit-scrollbar { width:4px; } #log::-webkit-scrollbar-track { background:transparent; } #log::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
   .log-num { color:var(--accent); font-weight:600; }
   .log-check { color:#f0c040; font-weight:600; }
@@ -162,15 +169,14 @@
   </div>
 
   <div class="mid-col">
-    <div style="display:flex">
+    <div style="display:flex;gap:4px;align-items:flex-start;">
       <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
-      <div id="board"></div>
+      <div>
+        <div id="board"></div>
+        <div class="coords-row" id="file-labels"></div>
+      </div>
     </div>
-    <div class="coords-row" id="file-labels"></div>
-    <div class="panel" style="width:480px;">
-      <h3>기보</h3>
-      <div id="log"></div>
-    </div>
+    <div id="log-box"><div id="log"></div></div>
   </div>
 
   <div class="col-right">
