@@ -1490,6 +1490,10 @@ document.querySelectorAll('#theme-toggle button').forEach(btn => {
     applyTheme(t);
   };
 });
+// 허브(또는 다른 게임)에서 테마를 바꾼 경우에도 즉시 반영
+window.addEventListener('storage', (e) => {
+  if (e.key === THEME_KEY) applyTheme(e.newValue || 'simple');
+});
 </script>
 </body>
 </html>
