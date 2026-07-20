@@ -89,17 +89,12 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 /* 우측 패널 */
 #turn-box {
   background: var(--panel-bg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px; text-align: center;
+  border-radius: 8px; padding: 0; height: 52px; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
 }
 #turn-indicator { font-size: 14px; font-weight: bold; color: var(--accent); }
 #status-bar { font-size: 11px; color: var(--text-dim); margin-top: 4px; min-height: 14px; }
-
-#rules-box {
-  background: var(--panel-bg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px;
-}
-#rules-box p, #rules-box li { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
-#rules-box ul { padding-left: 14px; }
 
 #ai-box {
   background: var(--panel-bg); border: 1px solid var(--border);
@@ -263,10 +258,10 @@ button:hover { background: var(--btn-accent-bg); }
       <div class="captured-row" id="capBlack"></div>
     </div>
     <div id="rules-box" class="panel">
-      <div style="font-size:10px;color:#888;">
-        <div style="color:#d4a843;font-size:11px;margin-bottom:4px;">승리 조건</div>
-        <div>• 체크메이트</div>
-        <div>• 선장이 육지에서 2턴 연속 체크 없이 생존</div>
+      <h3>규칙</h3>
+      <div style="color:var(--accent); margin-bottom:4px; font-size:12px;">승리 조건</div>
+      <div style="font-size:11px; color:var(--text-dim); line-height:1.6;">
+        • 체크메이트<br>• 선장이 육지에서 2턴 연속 체크 없이 생존
       </div>
     </div>
     <button onclick="openPieceModal()">기물 행마 보기</button>
