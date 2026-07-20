@@ -7,24 +7,24 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=Crimson+Text:ital,wght@0,400;0,600&display=swap');
 * { margin: 0; padding: 0; box-sizing: border-box; }
-/* 전역 테마 토큰 — 심플(기본). 해적체스는 예외적으로 바다/육지 타일색도 테마별로 조정 */
+/* 전역 테마 토큰 — 4개 게임+허브 전부 동일한 값(크롬). 바다/육지 타일색만 해적체스 예외로 별도 조정 */
 :root, html[data-theme="simple"]{
-  --bg:#0f1720; --panel-bg:#20242e; --border:#3a4a5e; --text:#ccd6e0; --text-dim:#7a8a99;
-  --accent:#5a9fd4; --accent-border:#5a9fd4;
-  --btn-bg:#20242e; --btn-border:#3a4a5e; --btn-accent-bg:#1c3a52;
-  --tab-inactive-bg:#20242e; --tab-inactive-border:#3a4a5e; --tab-inactive-text:#7a8a99;
-  --modal-bg:#0f1720; --modal-border:#5a9fd4;
-  --log-bg:#20242e; --log-border:#3a4a5e; --log-text:#7a8a99;
-  --font-family:'Segoe UI', sans-serif;
+  --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
+  --accent:#9ccc65; --accent-border:#8fbc5a;
+  --btn-bg:#333; --btn-border:#555; --btn-accent-bg:#3a4d2a;
+  --tab-inactive-bg:#333; --tab-inactive-border:#4d4d4d; --tab-inactive-text:#999;
+  --modal-bg:#1e1e1e; --modal-border:#8fbc5a;
+  --log-bg:#2a2a2a; --log-border:#444; --log-text:#999;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --sea-l:#2e5a72; --sea-d:#234655; --land-l:#4f6b45; --land-d:#3d5536;
 }
 html[data-theme="brown"]{
-  --bg:#120e08; --panel-bg:#1a1510; --border:#4a3520; --text:#d8c9a8; --text-dim:#9a8060;
-  --accent:#c9a86c; --accent-border:#c9a86c;
-  --btn-bg:#1a1510; --btn-border:#4a3520; --btn-accent-bg:rgba(201,168,108,.16);
-  --tab-inactive-bg:#1a1510; --tab-inactive-border:#4a3520; --tab-inactive-text:#9a8060;
-  --modal-bg:#120e08; --modal-border:#c9a86c;
-  --log-bg:#1a1510; --log-border:#4a3520; --log-text:#9a8060;
+  --bg:#1c0e05; --panel-bg:#2a1508; --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
+  --accent:#c9a84c; --accent-border:#c9a84c;
+  --btn-bg:transparent; --btn-border:#5a3a18; --btn-accent-bg:rgba(201,168,76,.18);
+  --tab-inactive-bg:transparent; --tab-inactive-border:#5a3a18; --tab-inactive-text:#806040;
+  --modal-bg:#1c0e05; --modal-border:#c9a84c;
+  --log-bg:rgba(255,255,255,.03); --log-border:#3a2010; --log-text:#a08060;
   --font-family:'Crimson Text', Georgia, serif;
   --sea-l:#3a4d48; --sea-d:#2c3c38; --land-l:#6b5a30; --land-d:#52441f;
 }
@@ -39,9 +39,6 @@ body {
   padding: 16px;
 }
 h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; margin-bottom: 10px; }
-#theme-toggle { display: flex; gap: 4px; margin-bottom: 10px; }
-#theme-toggle button { flex: 1; font-size: 11px; padding: 6px 4px; width: auto; }
-#theme-toggle button.active { background: var(--btn-accent-bg); border-color: var(--accent-border); color: var(--accent); }
 
 /* 메인 레이아웃: 보드 + 우측 패널 */
 #main-layout { display: flex; gap: 14px; align-items: flex-start; }
@@ -218,10 +215,6 @@ button:hover { background: var(--btn-accent-bg); }
 </head>
 <body>
 <h1>⚓ 해적 체스 (Pirate Chess)</h1>
-<div id="theme-toggle">
-  <button data-theme-btn="simple">심플</button>
-  <button data-theme-btn="brown">브라운</button>
-</div>
 <div id="main-layout">
   <!-- 보드 영역 -->
   <div style="display:flex;gap:4px;align-items:flex-start;">
@@ -1474,23 +1467,13 @@ function movesCannon(col,row,b,color,moves){
 
 resetGame();
 
-// ===== 전역 테마 (심플/브라운, localStorage로 게임 간 공유) =====
+// ===== 전역 테마 (심플/브라운) — 토글은 허브에만 있고, 여기서는 반영만 =====
 const THEME_KEY = 'newchess-theme';
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t);
-  document.querySelectorAll('#theme-toggle button').forEach(b => {
-    b.classList.toggle('active', b.dataset.themeBtn === t);
-  });
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'simple');
-document.querySelectorAll('#theme-toggle button').forEach(btn => {
-  btn.onclick = () => {
-    const t = btn.dataset.themeBtn;
-    localStorage.setItem(THEME_KEY, t);
-    applyTheme(t);
-  };
-});
-// 허브(또는 다른 게임)에서 테마를 바꾼 경우에도 즉시 반영
+// 허브(또는 다른 게임)에서 테마를 바꾼 경우 즉시 반영
 window.addEventListener('storage', (e) => {
   if (e.key === THEME_KEY) applyTheme(e.newValue || 'simple');
 });
