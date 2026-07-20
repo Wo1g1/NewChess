@@ -153,7 +153,7 @@
     margin-top:10px;
     background:var(--log-bg); border:1px solid var(--log-border);
     border-radius:6px; padding:8px 12px;
-    width:480px;
+    width:480px; box-sizing:border-box;
     max-height:80px; overflow-y:auto;
   }
   #log{ font-size:11px; color:var(--log-text); font-family:monospace; white-space:pre-wrap; }
@@ -217,7 +217,7 @@
   <div class="col-left">
     <div id="status">백 차례</div>
     <div class="panel">
-      <h3>흑에게 잡힌 백 기물</h3>
+      <h3>흑에게 잡힌 기물</h3>
       <div class="captured-row" id="capWhite"></div>
     </div>
     <button id="resetBtn">새 게임</button>
@@ -249,7 +249,7 @@
   <div class="col-right">
     <div style="height:52px;box-sizing:border-box;" aria-hidden="true"></div>
     <div class="panel">
-      <h3>백에게 잡힌 흑 기물</h3>
+      <h3>백에게 잡힌 기물</h3>
       <div class="captured-row" id="capBlack"></div>
     </div>
     <div class="panel" id="rules-box">
