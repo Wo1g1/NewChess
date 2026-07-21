@@ -29,6 +29,7 @@
   }
   body{
     font-family: var(--font-family);
+    line-height: 1.2;
     background:var(--bg);
     color:var(--text);
     margin:0;
@@ -77,6 +78,7 @@
   .sq.dark{background:var(--dark-sq);}
   .sq.selected{outline:3px solid #f2c744; outline-offset:-3px;}
   .sq.inCheck{outline:3px solid #ff3b3b; outline-offset:-3px;}
+  .glyph{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   .glyph.white-piece{color:#ffffff; text-shadow:0 0 1px #000, 0 0 2px #000; position:relative; z-index:2;}
   .glyph.black-piece{color:#000000; text-shadow:0 0 1px rgba(255,255,255,.35); position:relative; z-index:2;}
   .rowlabel, .collabel{
@@ -110,6 +112,7 @@
     font-size:20px;
     min-height:26px;
   }
+  .cap-glyph{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   .cap-glyph.white{ color:#fff; }
   .cap-glyph.black{ color:#000; text-shadow:0 0 1px rgba(255,255,255,.7), 0 0 1.4px rgba(255,255,255,.4); }
   #ai-thinking{ font-size:10px; color:var(--accent); min-height:14px; text-align:center; margin-top:6px; }
@@ -122,6 +125,7 @@
     color:var(--accent);
     cursor:pointer;
     font-size:13px;
+    line-height:1.2;
     font-family:var(--font-family);
   }
   button:hover{background:var(--btn-accent-bg);}
