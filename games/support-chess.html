@@ -110,6 +110,8 @@
     font-size:20px;
     min-height:26px;
   }
+  .cap-glyph.white{ color:#fff; }
+  .cap-glyph.black{ color:#000; text-shadow:0 0 1px rgba(255,255,255,.7), 0 0 1.4px rgba(255,255,255,.4); }
   #ai-thinking{ font-size:10px; color:var(--accent); min-height:14px; text-align:center; margin-top:6px; }
   input[type="radio"], input[type="checkbox"]{ margin:0; }
   button{
@@ -830,8 +832,19 @@ function render(){
   document.getElementById('status-main').textContent = statusMessage;
   statusEl.className = gameOver ? 'over' : (checkColor ? 'check' : '');
 
-  document.getElementById('capWhite').textContent = capturedByBlack.map(p => GLYPH['w'][p]).join(' ');
-  document.getElementById('capBlack').textContent = capturedByWhite.map(p => GLYPH['b'][p]).join(' ');
+  renderCapturedRow('capWhite', capturedByBlack, 'w', 'white');
+  renderCapturedRow('capBlack', capturedByWhite, 'b', 'black');
+}
+
+function renderCapturedRow(elId, list, glyphColor, cssClass){
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  list.forEach(p => {
+    const span = document.createElement('span');
+    span.className = 'cap-glyph ' + cssClass;
+    span.textContent = GLYPH[glyphColor][p];
+    el.appendChild(span);
+  });
 }
 
 function onSquareClick(r,c){
