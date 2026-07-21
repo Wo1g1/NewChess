@@ -219,6 +219,7 @@
 let currentVersion = 'basic'; // 'basic' | 'extended'
 const CELL_SIZE = { basic: 80, extended: 60 };
 const BOARD_SIZE = { basic: 6, extended: 8 };
+const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
 
 function switchVersion(v) {
   if(currentVersion === v) return;
@@ -465,7 +466,7 @@ function renderBoard() {
     if(piece){
       const span=document.createElement('span');
       span.className='piece '+(piece.color==='w'?'white':'black');
-      span.style.fontSize=CS>70?'52px':'38px';
+      span.style.fontSize=Math.floor(CS*PIECE_SIZE_RATIO)+'px';
       if(isDemotedType(piece.type)) span.classList.add('demoted');
       span.textContent=typeToSym(piece.type,piece.color);
       cell.appendChild(span);

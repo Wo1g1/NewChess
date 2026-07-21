@@ -65,7 +65,7 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 .cell {
   width: 48px; height: 48px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 23px; position: relative; user-select: none;
+  cursor: pointer; position: relative; user-select: none;
 }
 .sea-light  { background: var(--sea-l); }
 .sea-dark   { background: var(--sea-d); }
@@ -270,6 +270,7 @@ button:hover { background: var(--btn-accent-bg); }
 
 <script>
 const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수 (10x10 고정 보드라 CSS에서 48px 셀로 직접 반영)
+const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
 const FILES = ['a','b','c','d','e','f','g','h','i','j'];
 
 // 내부 배열: board[row][col], row 0 = rank 1 (백 후방), row 9 = rank 10 (흑 후방)
@@ -1087,6 +1088,7 @@ function render() {
       cell.className = 'cell ' + cellClass(c, r);
       cell.dataset.col = c;
       cell.dataset.row = r;
+      cell.style.fontSize = Math.floor((BOARD_FRAME_PX/10)*PIECE_SIZE_RATIO)+'px';
       cell.onclick = () => handleClick(c, r);
       const piece = board[r][c];
       if(piece) cell.textContent = GLYPHS[piece.color][piece.type];
