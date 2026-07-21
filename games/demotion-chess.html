@@ -1070,10 +1070,10 @@ const THEME_KEY = 'newchess-theme';
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t);
 }
-applyTheme(localStorage.getItem(THEME_KEY) || 'brown');
+applyTheme(localStorage.getItem(THEME_KEY) || 'simple');
 // 허브(또는 다른 게임)에서 테마를 바꾼 경우 즉시 반영
 window.addEventListener('storage', (e) => {
-  if (e.key === THEME_KEY) applyTheme(e.newValue || 'brown');
+  if (e.key === THEME_KEY) applyTheme(e.newValue || 'simple');
 });
 
 // ── 시작 ──────────────────────────────────────────────────────────────────
