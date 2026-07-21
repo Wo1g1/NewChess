@@ -47,6 +47,8 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 .panel{ background:var(--panel-bg); border:1px solid var(--border); border-radius:8px; padding:10px; }
 .panel h3{ font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
 .captured-row{ display:flex; flex-wrap:wrap; gap:2px; font-size:20px; min-height:26px; }
+.cap-glyph.white{ color:#fff; }
+.cap-glyph.black{ color:#000; text-shadow:0 0 1px rgba(255,255,255,.7), 0 0 1.4px rgba(255,255,255,.4); }
 
 #rank-labels {
   display: flex; flex-direction: column;
@@ -991,8 +993,19 @@ function render() {
   if(selected) highlightMoves(selected.col, selected.row);
   markChecks();
 
-  document.getElementById('capWhite').textContent = capturedByBlack.map(t => GLYPHS.W[t]).join(' ');
-  document.getElementById('capBlack').textContent = capturedByWhite.map(t => GLYPHS.B[t]).join(' ');
+  renderCapturedRow('capWhite', capturedByBlack, 'W', 'white');
+  renderCapturedRow('capBlack', capturedByWhite, 'B', 'black');
+}
+
+function renderCapturedRow(elId, list, glyphColor, cssClass){
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  list.forEach(t => {
+    const span = document.createElement('span');
+    span.className = 'cap-glyph ' + cssClass;
+    span.textContent = GLYPHS[glyphColor][t];
+    el.appendChild(span);
+  });
 }
 
 function cellIndex(col, row) {
