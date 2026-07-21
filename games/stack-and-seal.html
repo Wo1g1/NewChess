@@ -3,398 +3,244 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>겹침 보드게임</title>
+<title>Stack &amp; Seal</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap');
-
-:root {
-  --bg: #111;
-  --panel: #1c1c1c;
-  --board-border: #3a3a3a;
-  --cell-a: #252525;
-  --cell-b: #1e1e1e;
-  --cell-hover: rgba(255,255,255,0.06);
-  --cell-forbidden: rgba(255,60,60,0.08);
-  --cell-valid: rgba(255,255,255,0.04);
-  --threatened: rgba(255,180,0,0.18);
-  --label: #444;
-  --text: #aaa;
-  --text-dim: #555;
-  --accent: #c8a96e;
-  --mono: 'JetBrains Mono', monospace;
-  --sans: 'Noto Sans KR', sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+/* 전역 테마 토큰 — 4개 게임+허브 전부 동일한 값(크롬). 보드 타일색만 게임별 예외 */
+:root, html[data-theme="simple"]{
+  --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
+  --accent:#9ccc65; --accent-border:#8fbc5a;
+  --btn-bg:#333; --btn-border:#555; --btn-accent-bg:#3a4d2a;
+  --tab-inactive-bg:#333; --tab-inactive-border:#4d4d4d; --tab-inactive-text:#999;
+  --modal-bg:#1e1e1e; --modal-border:#8fbc5a;
+  --log-bg:#2a2a2a; --log-border:#444; --log-text:#999;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --cell-a:#2b2b2b; --cell-b:#232323;
 }
-
+html[data-theme="brown"]{
+  --bg:#1c0e05; --panel-bg:#2a1508; --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
+  --accent:#c9a84c; --accent-border:#c9a84c;
+  --btn-bg:transparent; --btn-border:#5a3a18; --btn-accent-bg:rgba(201,168,76,.18);
+  --tab-inactive-bg:transparent; --tab-inactive-border:#5a3a18; --tab-inactive-text:#806040;
+  --modal-bg:#1c0e05; --modal-border:#c9a84c;
+  --log-bg:rgba(255,255,255,.03); --log-border:#3a2010; --log-text:#a08060;
+  --font-family:'Crimson Text', Georgia, serif;
+  --cell-a:#2c1f12; --cell-b:#22170d;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 28px 16px;
-  gap: 18px;
+  background: var(--bg); color: var(--text); font-family: var(--font-family);
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 20px;
 }
+/* 좌/보드/우 3컬럼 공통 레이아웃 (4개 게임 공용 구조) */
+.row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+.col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
+.mid-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+.coords-row { display:flex; margin-top:0; }
+.coord-label { text-align:center; font-family:var(--font-family); font-size:11px; color:var(--text-dim); }
+.rank-label { width:20px; text-align:center; font-family:var(--font-family); font-size:11px; color:var(--text-dim); }
 
-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-header h1 {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 6px;
-  color: var(--label);
-  text-transform: uppercase;
-}
-
-.turn-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--text);
-  background: var(--panel);
-  border: 1px solid #2a2a2a;
-  padding: 6px 16px;
-  border-radius: 4px;
-}
-
-.turn-stone {
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.turn-stone.black { background: radial-gradient(circle at 38% 32%, #555, #111 60%, #000); box-shadow: 0 2px 4px #000; }
-.turn-stone.white { background: radial-gradient(circle at 38% 32%, #fff, #d0d0d0 60%, #aaa); box-shadow: 0 2px 4px #0006; }
-
-.board-wrap {
-  display: flex;
-  align-items: flex-start;
-  gap: 0;
-  user-select: none;
-}
-
-.rank-labels {
-  display: flex;
-  flex-direction: column-reverse;
-  margin-right: 6px;
-  padding-top: 1px;
-}
-.rank-labels span {
-  width: 18px; height: 56px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 11px; color: var(--label);
-}
-
-.board-col { display: flex; flex-direction: column; align-items: center; }
-
-.board {
-  display: grid;
-  grid-template-columns: repeat(8, 56px);
-  grid-template-rows: repeat(8, 56px);
-  border: 1px solid var(--board-border);
-}
-
+#board { display:grid; box-shadow:0 0 40px rgba(0,0,0,.8); }
 .cell {
-  width: 56px; height: 56px;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-  cursor: default;
-  transition: background 0.1s;
-  border: 1px solid #222;
+  display:flex; align-items:center; justify-content:center; position:relative;
+  cursor:default; transition:background .1s;
 }
-.cell.ca { background: var(--cell-a); }
-.cell.cb { background: var(--cell-b); }
-.cell.forbidden { background: var(--cell-forbidden) !important; }
-.cell.threatened { background: var(--threatened) !important; }
-.cell.clickable { cursor: pointer; }
-.cell.clickable:hover { background: var(--cell-hover) !important; }
+.cell.light { background:var(--cell-a); } .cell.dark { background:var(--cell-b); }
+.cell.forbidden { background:rgba(255,60,60,.12) !important; }
+.cell.threatened { background:rgba(255,180,0,.16) !important; }
+.cell.clickable { cursor:pointer; }
+.cell.clickable:hover { background:rgba(255,255,255,.08) !important; }
 
-/* 돌 */
-.stone-wrap {
-  position: relative;
-  width: 46px; height: 46px;
-  pointer-events: none;
-}
+.stone-wrap { position:relative; width:50px; height:50px; pointer-events:none; }
+.stone { width:40px; height:40px; border-radius:50%; position:absolute; }
+.stone.black { background:radial-gradient(circle at 38% 32%, #4a4a4a, #111 55%, #000); box-shadow:0 3px 8px rgba(0,0,0,.9), inset 0 1px 2px rgba(255,255,255,.12); }
+.stone.white { background:radial-gradient(circle at 38% 32%, #fff, #d8d8d8 55%, #bbb); box-shadow:0 3px 8px rgba(0,0,0,.5), inset 0 1px 3px rgba(255,255,255,.9); }
+.layer1 .stone { top:5px; left:5px; }
+.layer2 .stone-back { top:12px; left:12px; opacity:.6; filter:brightness(.55); z-index:1; }
+.layer2 .stone-front { top:2px; left:2px; z-index:2; }
 
-.stone {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  position: absolute;
-}
-
-.stone.black {
-  background: radial-gradient(circle at 38% 32%, #4a4a4a, #111 55%, #000);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.9), inset 0 1px 2px rgba(255,255,255,0.12);
-}
-.stone.white {
-  background: radial-gradient(circle at 38% 32%, #ffffff, #d8d8d8 55%, #bbb);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 1px 3px rgba(255,255,255,0.9);
-}
-
-/* 1층: 중앙 */
-.layer1 .stone { top: 5px; left: 5px; }
-
-/* 2층: 사선 겹침 */
-.layer2 .stone-back {
-  top: 11px; left: 11px;
-  opacity: 0.6;
-  filter: brightness(0.55);
-  z-index: 1;
-}
-.layer2 .stone-front {
-  top: 2px; left: 2px;
-  z-index: 2;
-}
-
-/* 위협받는 돌 표시 */
 .threatened-ring {
-  position: absolute;
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  border: 2px solid #ffb400;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  animation: pulse 1s infinite;
-  pointer-events: none;
-  z-index: 10;
+  position:absolute; width:43px; height:43px; border-radius:50%;
+  border:2px solid #ffb400; top:50%; left:50%; transform:translate(-50%,-50%);
+  animation:pulse 1s infinite; pointer-events:none; z-index:10;
 }
 @keyframes pulse {
-  0%,100% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-  50% { opacity: 0.4; transform: translate(-50%,-50%) scale(1.1); }
+  0%,100% { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  50% { opacity:.4; transform:translate(-50%,-50%) scale(1.1); }
 }
 
-.file-labels {
-  display: flex;
-  margin-top: 5px;
-}
-.file-labels span {
-  width: 56px; height: 18px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 11px; color: var(--label);
-}
+.panel { background:var(--panel-bg); border:1px solid var(--border); border-radius:8px; padding:10px; }
+.panel h3 { font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
+#turn-display { font-size:15px; font-weight:600; color:var(--accent); text-align:center; }
+#status-msg { font-style:italic; font-size:.85rem; color:var(--text-dim); text-align:center; }
 
-/* 패널 */
-.panels {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-  max-width: 510px;
-}
+.score-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:12px; }
+.score-row:not(:last-child) { border-bottom:1px solid var(--border); }
+.score-val { color:var(--accent); font-weight:700; }
 
-.panel {
-  flex: 1;
-  background: var(--panel);
-  border: 1px solid #2a2a2a;
-  border-radius: 4px;
-  padding: 10px 12px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-dim);
+#log-box{
+  margin-top:10px;
+  background:var(--log-bg); border:1px solid var(--log-border);
+  border-radius:6px; padding:8px 12px;
+  width:480px; box-sizing:border-box;
+  max-height:80px; overflow-y:auto;
 }
+#log{ font-size:11px; color:var(--log-text); font-family:monospace; white-space:pre-wrap; }
+#log::-webkit-scrollbar { width:4px; } #log::-webkit-scrollbar-track { background:transparent; } #log::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.log-num { color:var(--accent); font-weight:600; }
+.log-stack { color:#3a78f6; }
+.log-destroy { color:#e05050; }
+.log-result { color:var(--text); font-weight:600; display:block; margin-top:4px; }
 
-.panel h3 {
-  font-size: 10px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--label);
-  margin-bottom: 8px;
-}
+#rules-box { font-size:.78rem; color:var(--text-dim); line-height:1.6; }
+#rules-box .rules-title { color:var(--accent); margin-bottom:4px; }
+.legend { display:flex; flex-direction:column; gap:6px; font-size:11px; color:var(--text-dim); }
+.legend-item { display:flex; align-items:center; gap:8px; }
+.leg-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+.leg-dot.threat { background:rgba(255,180,0,.4); border:1px solid #ffb400; }
+.leg-dot.forb { background:rgba(255,60,60,.2); border:1px solid #ff3c3c88; }
 
-.log-entries {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  max-height: 120px;
-  overflow-y: auto;
-}
+button { font-family:var(--font-family); font-size:13px; background:var(--btn-bg); border:1px solid var(--btn-border); color:var(--accent); padding:8px 14px; cursor:pointer; border-radius:6px; transition:background .15s,border-color .15s; }
+button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border); }
 
-.log-entry { color: var(--text); }
-.log-entry.black-move { color: #ccc; }
-.log-entry.white-move { color: #888; }
-.log-entry.destroy { color: #ff6b6b; }
-.log-entry.system { color: var(--accent); }
+.game-over-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100; align-items:center; justify-content:center; }
+.game-over-overlay.show { display:flex; }
+.game-over-box { background:var(--modal-bg); border:2px solid var(--modal-border); border-radius:10px; padding:32px 40px; text-align:center; display:flex; flex-direction:column; gap:12px; }
+.game-over-box h2 { font-size:18px; color:var(--accent); letter-spacing:.15em; }
+.game-over-box p { font-size:13px; color:var(--text); }
 
-.score-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 0;
-  border-bottom: 1px solid #2a2a2a;
+/* 규칙 안내 모달 (4개 게임 공용 톤) */
+#rules-modal{
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.75); z-index:150;
+  align-items:center; justify-content:center;
 }
-.score-row:last-child { border-bottom: none; }
-.score-val { color: var(--accent); font-weight: 700; font-size: 14px; }
-
-.btn-row {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
+#rules-modal.show{ display:flex; }
+#rules-modal-box{
+  background:var(--modal-bg); border:2px solid var(--modal-border);
+  border-radius:10px; padding:20px; width:560px; max-height:90vh;
+  overflow-y:auto; position:relative; font-family:var(--font-family);
 }
-
-button {
-  background: #222;
-  border: 1px solid #333;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 2px;
-  padding: 7px 16px;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: background 0.15s, border-color 0.15s;
+#rules-modal-box h3{ color:var(--accent); font-size:1rem; letter-spacing:.08em; margin-bottom:14px; text-align:center; }
+.rule-section{ margin-bottom:16px; }
+.rule-section h5{ font-size:.78rem; color:var(--accent); margin-bottom:8px; }
+.rule-section-body{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+.mini-board{ display:grid; gap:1px; background:#111; border:1px solid var(--border); width:fit-content; }
+.mc{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; position:relative; }
+.mc.chk-l{ background:var(--cell-a); } .mc.chk-d{ background:var(--cell-b); }
+.mc.forbidden{ background:rgba(255,60,60,.18) !important; }
+.mc.threatened{ background:rgba(255,180,0,.22) !important; }
+.mc .mstone{ width:22px; height:22px; border-radius:50%; position:relative; }
+.mc .mstone.b1{ background:radial-gradient(circle at 38% 32%, #4a4a4a, #111 55%, #000); }
+.mc .mstone.w1{ background:radial-gradient(circle at 38% 32%, #fff, #d8d8d8 55%, #bbb); }
+.mc .mstone2{ position:absolute; width:22px; height:22px; border-radius:50%; }
+.mc .mstone2.b1{ background:radial-gradient(circle at 38% 32%, #4a4a4a, #111 55%, #000); }
+.mc .mstone2.w1{ background:radial-gradient(circle at 38% 32%, #fff, #d8d8d8 55%, #bbb); }
+.mc .mstone2.back{ top:4px; left:4px; opacity:.6; filter:brightness(.55); }
+.mc .mstone2.front{ top:-2px; left:-2px; }
+.mc .dot{ width:14px; height:14px; border-radius:50%; background:rgba(58,120,246,.85); }
+.rule-desc{ flex:1; min-width:180px; font-size:.78rem; color:var(--text-dim); line-height:1.7; }
+#rules-close{
+  position:absolute; top:10px; right:14px; width:28px; height:28px;
+  background:none; border:none; color:var(--text-dim); font-size:1.1rem; cursor:pointer;
 }
-button:hover { background: #2a2a2a; border-color: #444; }
-
-.game-over-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  flex-direction: column;
-  gap: 16px;
-}
-.game-over-overlay.show { display: flex; }
-.game-over-box {
-  background: var(--panel);
-  border: 1px solid #333;
-  padding: 32px 40px;
-  text-align: center;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.game-over-box h2 {
-  font-family: var(--mono);
-  font-size: 18px;
-  color: var(--accent);
-  letter-spacing: 4px;
-}
-.game-over-box p { font-size: 13px; color: var(--text); }
-
-/* 범례 */
-.legend {
-  display: flex;
-  gap: 20px;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-dim);
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.legend-item { display: flex; align-items: center; gap: 6px; }
-.leg-dot {
-  width: 12px; height: 12px; border-radius: 50%;
-}
-.leg-dot.b { background: #222; border: 1px solid #555; }
-.leg-dot.w { background: #ddd; border: 1px solid #aaa; }
-.leg-dot.threat { background: rgba(255,180,0,0.4); border: 1px solid #ffb400; }
-.leg-dot.forb { background: rgba(255,60,60,0.2); border: 1px solid #ff3c3c44; }
+#rules-close:hover{ color:var(--accent); }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Stack & Seal</h1>
-  <div class="turn-badge">
-    <div class="turn-stone black" id="turnStone"></div>
-    <span id="turnText">흑의 차례</span>
+<div class="row3">
+  <div class="col-left">
+    <div class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+      <div id="turn-display">흑 차례</div>
+      <div id="status-msg"></div>
+    </div>
+    <div class="panel">
+      <h3>정보</h3>
+      <div class="score-row"><span>흑 가능 수</span><span class="score-val" id="blackMoves">-</span></div>
+      <div class="score-row"><span>백 가능 수</span><span class="score-val" id="whiteMoves">-</span></div>
+      <div class="score-row"><span>위협받는 돌</span><span class="score-val" id="threatened">-</span></div>
+    </div>
+    <button onclick="resetGame()">새 게임</button>
+    <button onclick="undoMove()">되돌리기</button>
   </div>
-</header>
 
-<div class="board-wrap">
-  <div class="rank-labels" id="rankLabels"></div>
-  <div class="board-col">
-    <div class="board" id="board"></div>
-    <div class="file-labels" id="fileLabels"></div>
+  <div class="mid-col">
+    <div style="display:flex;align-items:flex-start;">
+      <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
+      <div>
+        <div id="board"></div>
+        <div class="coords-row" id="file-labels"></div>
+      </div>
+    </div>
+    <div id="log-box"><div id="log"></div></div>
   </div>
-</div>
 
-<div class="panels">
-  <div class="panel">
-    <h3>Log</h3>
-    <div class="log-entries" id="log"></div>
+  <div class="col-right">
+    <div style="height:52px;box-sizing:border-box;" aria-hidden="true"></div>
+    <div class="panel" id="rules-box">
+      <h3>범례</h3>
+      <div class="legend">
+        <div class="legend-item"><div class="leg-dot threat"></div> 위협받는 돌</div>
+        <div class="legend-item"><div class="leg-dot forb"></div> 금수 칸</div>
+      </div>
+    </div>
+    <button id="rulesBtn">규칙 보기</button>
   </div>
-  <div class="panel">
-    <h3>Info</h3>
-    <div class="score-row"><span>흑 가능 수</span><span class="score-val" id="blackMoves">-</span></div>
-    <div class="score-row"><span>백 가능 수</span><span class="score-val" id="whiteMoves">-</span></div>
-    <div class="score-row"><span>위협받는 돌</span><span class="score-val" id="threatened">-</span></div>
-  </div>
-</div>
-
-<div class="btn-row">
-  <button onclick="resetGame()">NEW GAME</button>
-  <button onclick="undoMove()">UNDO</button>
-</div>
-
-<div class="legend">
-  <div class="legend-item"><div class="leg-dot threat"></div> 위협받는 돌</div>
-  <div class="legend-item"><div class="leg-dot forb"></div> 금수 칸</div>
 </div>
 
 <div class="game-over-overlay" id="gameOver">
   <div class="game-over-box">
     <h2>GAME OVER</h2>
     <p id="gameOverText"></p>
-    <button onclick="resetGame()">NEW GAME</button>
+    <button onclick="resetGame()">새 게임</button>
+  </div>
+</div>
+
+<div id="rules-modal">
+  <div id="rules-modal-box">
+    <button id="rules-close">✕</button>
+    <h3>규칙 안내</h3>
+    <div id="rules-content"></div>
   </div>
 </div>
 
 <script>
+const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수
 const SIZE = 8;
+const CELL = BOARD_FRAME_PX / SIZE; // 60px
+
 // board[r][f]: null | {color:'b'|'w', layer:1|2}
 let board = [];
 let currentTurn = 'b'; // 'b' or 'w'
-let history = []; // for undo
-// threatened[r][f] = true if that cell's stone is threatened (1층, will be destroyed next turn if not defended)
-let threatened = {};
-// pendingDestroy: cells to destroy at start of current player's turn
+let history = [];
 let pendingDestroy = [];
 let gameOver = false;
-let logEntries = [];
+let logEntries = []; // {text, isBlack} 완성된 줄 단위가 아니라 addMoveToLog에서 조립
 let moveCount = 0;
 
 function initBoard() {
   board = [];
-  for (let r = 0; r < SIZE; r++) {
-    board.push(new Array(SIZE).fill(null));
-  }
+  for (let r = 0; r < SIZE; r++) board.push(new Array(SIZE).fill(null));
 }
 
 function resetGame() {
   initBoard();
   currentTurn = 'b';
   history = [];
-  threatened = {};
   pendingDestroy = [];
   gameOver = false;
-  logEntries = [];
   moveCount = 0;
   document.getElementById('gameOver').classList.remove('show');
-  addLog('새 게임 시작', 'system');
+  document.getElementById('log').innerHTML = '';
   render();
 }
 
-// 파일 인덱스 → 문자
 function fileChar(f) { return String.fromCharCode(97 + f); }
-// 랭크 인덱스(0=rank8) → 숫자
 function rankNum(r) { return SIZE - r; }
 function cellName(r, f) { return fileChar(f) + rankNum(r); }
 
-// 인접 4방향
 function neighbors(r, f) {
   const res = [];
   if (r > 0) res.push([r-1, f]);
@@ -404,52 +250,41 @@ function neighbors(r, f) {
   return res;
 }
 
-// 해당 칸에 돌을 둘 수 있는지 (새 돌 배치 or 겹치기)
-// color: 두려는 플레이어 색
-function canPlace(r, f, color) {
-  const cell = board[r][f];
-  // 이미 2층이면 불가
+// b: 시뮬레이션용 보드 (기본값: 실제 게임 보드) — AI 탐색에서 복제 보드를 넘겨 쓸 수 있게 파라미터화
+function canPlace(r, f, color, b=board) {
+  const cell = b[r][f];
   if (cell && cell.layer === 2) return false;
-  // 이미 상대 돌이면 불가
   if (cell && cell.color !== color) return false;
 
-  // 빈 칸이면: 인접에 상대 2층 있으면 금수
   if (!cell) {
     for (const [nr, nf] of neighbors(r, f)) {
-      const n = board[nr][nf];
+      const n = b[nr][nf];
       if (n && n.color !== color && n.layer === 2) return false;
     }
     return true;
   }
-
-  // 자기 돌 1층이면: 겹치기 가능 (인접 금수 체크 없음 — 자기 돌 위)
-  if (cell && cell.color === color && cell.layer === 1) return true;
-
+  if (cell.color === color && cell.layer === 1) return true;
   return false;
 }
 
-function getValidMoves(color) {
+function getValidMoves(color, b=board) {
   const moves = [];
-  for (let r = 0; r < SIZE; r++) {
-    for (let f = 0; f < SIZE; f++) {
-      if (canPlace(r, f, color)) moves.push([r, f]);
-    }
-  }
+  for (let r = 0; r < SIZE; r++)
+    for (let f = 0; f < SIZE; f++)
+      if (canPlace(r, f, color, b)) moves.push([r, f]);
   return moves;
 }
 
 // 위협 계산: 2층 돌 인접 상대 1층 돌 목록
-function calcThreats() {
+function calcThreats(b=board) {
   const threats = {};
   for (let r = 0; r < SIZE; r++) {
     for (let f = 0; f < SIZE; f++) {
-      const cell = board[r][f];
+      const cell = b[r][f];
       if (cell && cell.layer === 2) {
         for (const [nr, nf] of neighbors(r, f)) {
-          const n = board[nr][nf];
-          if (n && n.color !== cell.color && n.layer === 1) {
-            threats[`${nr},${nf}`] = true;
-          }
+          const n = b[nr][nf];
+          if (n && n.color !== cell.color && n.layer === 1) threats[`${nr},${nf}`] = true;
         }
       }
     }
@@ -457,81 +292,71 @@ function calcThreats() {
   return threats;
 }
 
-function addLog(msg, type) {
-  logEntries.unshift({ msg, type });
-  if (logEntries.length > 50) logEntries.pop();
+function addMoveToLog(text, isBlack, destroyed){
+  const log = document.getElementById('log');
+  if(isBlack){
+    const ns = document.createElement('span'); ns.className='log-num'; ns.textContent = `${moveCount}.`;
+    log.appendChild(ns); log.appendChild(document.createTextNode(text));
+  } else {
+    log.appendChild(document.createTextNode(' '+text));
+  }
+  if(destroyed && destroyed.length){
+    const d = document.createElement('span'); d.className='log-destroy'; d.textContent = '×'+destroyed.join(',');
+    log.appendChild(d);
+  }
+  if(!isBlack) log.appendChild(document.createTextNode(' '));
+  log.scrollTop = log.scrollHeight;
+}
+function appendLog(html){
+  const log = document.getElementById('log'); const span = document.createElement('span');
+  span.innerHTML = html; log.appendChild(span); log.scrollTop = log.scrollHeight;
 }
 
 function doPlace(r, f) {
   if (gameOver) return;
   if (!canPlace(r, f, currentTurn)) return;
 
-  // 스냅샷 저장
   history.push({
     board: JSON.parse(JSON.stringify(board)),
     currentTurn,
-    threatened: JSON.parse(JSON.stringify(threatened)),
     pendingDestroy: [...pendingDestroy],
-    logEntries: [...logEntries],
+    logHTML: document.getElementById('log').innerHTML,
     moveCount,
   });
 
   const cell = board[r][f];
   const isStack = cell && cell.color === currentTurn && cell.layer === 1;
-  moveCount++;
+  const isBlack = currentTurn === 'b';
+  if(isBlack) moveCount++;
 
-  if (isStack) {
-    board[r][f] = { color: currentTurn, layer: 2 };
-    addLog(`${moveCount}. ${currentTurn === 'b' ? '흑' : '백'} ${cellName(r,f)} 겹침(2층)`, currentTurn === 'b' ? 'black-move' : 'white-move');
-  } else {
-    board[r][f] = { color: currentTurn, layer: 1 };
-    addLog(`${moveCount}. ${currentTurn === 'b' ? '흑' : '백'} ${cellName(r,f)} 배치`, currentTurn === 'b' ? 'black-move' : 'white-move');
-  }
+  board[r][f] = { color: currentTurn, layer: isStack ? 2 : 1 };
 
-  // 위협 계산 (이번 수로 생긴 새 위협)
-  const newThreats = calcThreats();
-
-  // 이전 턴에 위협받았던 돌 중, 이번 턴(상대 턴)에 2층으로 방어 못 한 것 → 파괴
-  // pendingDestroy는 상대가 공격 후 내가 방어 안 한 것들
+  // 이전 상대 수로 위협받은 채 방어 못 한 내 돌 파괴
   const destroyed = [];
   for (const key of pendingDestroy) {
     const [dr, df] = key.split(',').map(Number);
     const stone = board[dr][df];
-    // 아직 1층인지 확인 (방어했으면 2층이 됐을 것)
-    if (stone && stone.layer === 1) {
-      board[dr][df] = null;
-      destroyed.push(cellName(dr, df));
-    }
-  }
-  if (destroyed.length > 0) {
-    addLog(`  파괴: ${destroyed.join(', ')}`, 'destroy');
+    if (stone && stone.layer === 1) { board[dr][df] = null; destroyed.push(cellName(dr, df)); }
   }
 
-  // 다음 턴의 pendingDestroy 계산
-  // 현재 수로 생긴 2층이 위협하는 상대 1층
+  addMoveToLog(cellName(r,f) + (isStack ? '^' : ''), isBlack, destroyed);
+
+  // 이번 수로 생긴 2층이 위협하는 상대 1층 → 다음 pendingDestroy
   const nextPending = [];
-  if (isStack || board[r][f].layer === 2) {
+  if (board[r][f].layer === 2) {
     for (const [nr, nf] of neighbors(r, f)) {
       const n = board[nr][nf];
-      if (n && n.color !== currentTurn && n.layer === 1) {
-        nextPending.push(`${nr},${nf}`);
-      }
+      if (n && n.color !== currentTurn && n.layer === 1) nextPending.push(`${nr},${nf}`);
     }
   }
-
-  threatened = newThreats;
   pendingDestroy = nextPending;
 
-  // 턴 전환
   const nextTurn = currentTurn === 'b' ? 'w' : 'b';
-
-  // 다음 플레이어가 둘 수 있는지 확인
   const nextMoves = getValidMoves(nextTurn);
   if (nextMoves.length === 0) {
-    // 게임 종료
     gameOver = true;
     const winner = currentTurn === 'b' ? '흑' : '백';
-    addLog(`게임 종료 — ${winner} 승리!`, 'system');
+    appendLog(`<span class="log-result">${winner} 승리 — 상대 봉쇄</span>`);
     render();
     showGameOver(winner);
     return;
@@ -551,11 +376,10 @@ function undoMove() {
   const snap = history.pop();
   board = snap.board;
   currentTurn = snap.currentTurn;
-  threatened = snap.threatened;
   pendingDestroy = snap.pendingDestroy;
-  logEntries = snap.logEntries;
   moveCount = snap.moveCount;
   gameOver = false;
+  document.getElementById('log').innerHTML = snap.logHTML;
   document.getElementById('gameOver').classList.remove('show');
   render();
 }
@@ -578,47 +402,56 @@ function makeStoneEl(color, layer) {
   return wrap;
 }
 
-function render() {
-  // rank labels
-  const rl = document.getElementById('rankLabels');
+function buildRankLabels(){
+  const rl = document.getElementById('rank-labels');
   rl.innerHTML = '';
-  for (let r = SIZE - 1; r >= 0; r--) {
-    const sp = document.createElement('span');
+  for (let r = 0; r < SIZE; r++) {
+    const sp = document.createElement('div');
+    sp.className = 'rank-label';
+    sp.style.height = CELL+'px';
+    sp.style.lineHeight = CELL+'px';
     sp.textContent = SIZE - r;
     rl.appendChild(sp);
   }
-
-  // file labels
-  const fl = document.getElementById('fileLabels');
+}
+function buildFileLabels(){
+  const fl = document.getElementById('file-labels');
   fl.innerHTML = '';
   for (let f = 0; f < SIZE; f++) {
-    const sp = document.createElement('span');
+    const sp = document.createElement('div');
+    sp.className = 'coord-label';
+    sp.style.width = CELL+'px';
     sp.textContent = fileChar(f);
     fl.appendChild(sp);
   }
+}
+
+function render() {
+  buildRankLabels();
+  buildFileLabels();
 
   const validMoves = gameOver ? [] : getValidMoves(currentTurn);
   const validSet = new Set(validMoves.map(([r,f]) => `${r},${f}`));
   const threatenedNow = calcThreats();
 
-  // forbidden: empty cells adjacent to opponent 2-layer
   const boardEl = document.getElementById('board');
+  boardEl.style.gridTemplateColumns = `repeat(${SIZE}, ${CELL}px)`;
+  boardEl.style.gridTemplateRows = `repeat(${SIZE}, ${CELL}px)`;
   boardEl.innerHTML = '';
 
   for (let r = 0; r < SIZE; r++) {
     for (let f = 0; f < SIZE; f++) {
       const cell = document.createElement('div');
-      const isA = (r + f) % 2 === 0;
-      cell.className = 'cell ' + (isA ? 'ca' : 'cb');
+      const isLight = (r + f) % 2 === 0;
+      cell.className = 'cell ' + (isLight ? 'light' : 'dark');
+      cell.style.width = CELL+'px'; cell.style.height = CELL+'px';
 
       const key = `${r},${f}`;
       const stone = board[r][f];
       const isValid = validSet.has(key);
       const isThreatened = threatenedNow[key];
 
-      // 금수 표시: 빈 칸인데 못 두는 경우
       if (!stone && !isValid) {
-        // 인접 상대 2층 있는지 확인
         let hasForbid = false;
         for (const [nr,nf] of neighbors(r,f)) {
           const n = board[nr][nf];
@@ -626,68 +459,169 @@ function render() {
         }
         if (hasForbid) cell.classList.add('forbidden');
       }
-
       if (isThreatened) cell.classList.add('threatened');
-
       if (isValid && !gameOver) {
         cell.classList.add('clickable');
         cell.addEventListener('click', () => doPlace(r, f));
       }
-
       if (stone) {
-        const stoneEl = makeStoneEl(stone.color, stone.layer);
-        cell.appendChild(stoneEl);
+        cell.appendChild(makeStoneEl(stone.color, stone.layer));
         if (isThreatened) {
           const ring = document.createElement('div');
           ring.className = 'threatened-ring';
           cell.appendChild(ring);
         }
       }
-
       boardEl.appendChild(cell);
     }
   }
 
-  // turn badge
-  const ts = document.getElementById('turnStone');
-  const tt = document.getElementById('turnText');
-  ts.className = 'turn-stone ' + (currentTurn === 'b' ? 'black' : 'white');
-  tt.textContent = (currentTurn === 'b' ? '흑' : '백') + '의 차례';
+  document.getElementById('turn-display').textContent = (currentTurn === 'b' ? '흑' : '백') + ' 차례';
+  const myThreats = Object.keys(threatenedNow).some(key => {
+    const [r,f] = key.split(',').map(Number);
+    return board[r][f]?.color === currentTurn;
+  });
+  document.getElementById('status-msg').textContent = (!gameOver && myThreats) ? '위협받는 돌 있음' : '';
 
-  // info
-  const bm = getValidMoves('b').length;
-  const wm = getValidMoves('w').length;
-  document.getElementById('blackMoves').textContent = bm;
-  document.getElementById('whiteMoves').textContent = wm;
+  document.getElementById('blackMoves').textContent = getValidMoves('b').length;
+  document.getElementById('whiteMoves').textContent = getValidMoves('w').length;
   document.getElementById('threatened').textContent = Object.keys(threatenedNow).length;
+}
 
-  // log
-  const logEl = document.getElementById('log');
-  logEl.innerHTML = '';
-  for (const entry of logEntries) {
-    const div = document.createElement('div');
-    div.className = 'log-entry ' + (entry.type || '');
-    div.textContent = entry.msg;
-    logEl.appendChild(div);
+// ── 규칙 안내 모달 ────────────────────────────────────────────────────────
+function makeGrid(size){ return Array.from({length:size}, () => Array(size).fill(null)); }
+
+function buildRulesSections(){
+  const sections = [];
+
+  // 1. 배치 & 금수
+  {
+    const g = makeGrid(3);
+    g[1][1] = 'w2'; // 상대(백) 2층
+    g[0][1] = 'forbid'; g[2][1] = 'forbid'; g[1][0] = 'forbid'; g[1][2] = 'forbid';
+    sections.push({
+      title:'배치 & 금수',
+      grid:g,
+      desc:'빈 칸에 자유롭게 돌을 놓을 수 있다. 단, 상대의 2층 돌과 인접한 빈 칸(금수 칸, 빨간 표시)에는 놓을 수 없다.'
+    });
+  }
+  // 2. 겹침
+  {
+    const g = makeGrid(3);
+    g[1][1] = 'b1';
+    sections.push({
+      title:'겹침',
+      grid:g,
+      desc:'자신의 1층 돌 위에는 겹쳐서 2층으로 만들 수 있다(같은 칸을 다시 선택). 2층 돌은 위/아래로 겹쳐 쌓이며, 그 위에는 더 이상 아무것도 놓을 수 없다.'
+    });
+  }
+  // 3. 위협 & 파괴
+  {
+    const g = makeGrid(3);
+    g[1][1] = 'b2';
+    g[0][1] = 'w1-threat';
+    sections.push({
+      title:'위협 & 파괴',
+      grid:g,
+      desc:'2층 돌은 인접한 상대의 1층 돌을 위협한다(주황 표시). 위협받은 돌의 주인이 바로 다음 자신의 차례에 그 칸을 2층으로 방어하지 못하면, 그 돌은 파괴되어 보드에서 사라진다.'
+    });
+  }
+
+  return sections;
+}
+
+function renderMiniStone(cell, spec){
+  if(spec==='b1' || spec==='w1' || spec==='w1-threat'){
+    if(spec==='w1-threat') cell.classList.add('threatened');
+    const s = document.createElement('div');
+    s.className = 'mstone ' + (spec.startsWith('b') ? 'b1' : 'w1');
+    cell.appendChild(s);
+  } else if(spec==='b2' || spec==='w2'){
+    const color = spec[0];
+    const back = document.createElement('div'); back.className = 'mstone2 back ' + color+'1';
+    const front = document.createElement('div'); front.className = 'mstone2 front ' + color+'1';
+    cell.appendChild(back); cell.appendChild(front);
+  } else if(spec==='forbid'){
+    cell.classList.add('forbidden');
   }
 }
 
-// 파일/랭크 라벨 초기화
-(function initLabels() {
-  const rl = document.getElementById('rankLabels');
-  for (let i = SIZE; i >= 1; i--) {
-    const sp = document.createElement('span');
-    sp.textContent = i;
-    rl.appendChild(sp);
-  }
-  const fl = document.getElementById('fileLabels');
-  for (let f = 0; f < SIZE; f++) {
-    const sp = document.createElement('span');
-    sp.textContent = fileChar(f);
-    fl.appendChild(sp);
-  }
-})();
+function renderRulesContent(){
+  const cont = document.getElementById('rules-content');
+  cont.innerHTML = '';
+  for(const sec of buildRulesSections()){
+    const wrap = document.createElement('div');
+    wrap.className = 'rule-section';
+    const h5 = document.createElement('h5'); h5.textContent = sec.title;
+    wrap.appendChild(h5);
 
+    const body = document.createElement('div');
+    body.className = 'rule-section-body';
+
+    const size = sec.grid.length;
+    const mb = document.createElement('div');
+    mb.className = 'mini-board';
+    mb.style.gridTemplateColumns = `repeat(${size}, 40px)`;
+    mb.style.gridTemplateRows = `repeat(${size}, 40px)`;
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        const cell = document.createElement('div');
+        const isL = (r+c)%2===0;
+        cell.className = 'mc ' + (isL?'chk-l':'chk-d');
+        const spec = sec.grid[r][c];
+        if(spec) renderMiniStone(cell, spec);
+        mb.appendChild(cell);
+      }
+    }
+    body.appendChild(mb);
+
+    const desc = document.createElement('div');
+    desc.className = 'rule-desc';
+    desc.textContent = sec.desc;
+    body.appendChild(desc);
+
+    wrap.appendChild(body);
+    cont.appendChild(wrap);
+  }
+  const win = document.createElement('div');
+  win.className = 'rule-section';
+  const h5 = document.createElement('h5'); h5.textContent = '승리 조건';
+  win.appendChild(h5);
+  const desc = document.createElement('div');
+  desc.className = 'rule-desc';
+  desc.textContent = '자신의 차례에 돌을 놓을 수 있는 칸이 하나도 없으면(완전히 봉쇄당하면) 패배한다. 상대를 봉쇄시킨 쪽이 승리.';
+  win.appendChild(desc);
+  cont.appendChild(win);
+}
+
+function openRulesModal(){
+  renderRulesContent();
+  document.getElementById('rules-modal').classList.add('show');
+  notifyModal(true);
+}
+function closeRulesModal(){
+  document.getElementById('rules-modal').classList.remove('show');
+  notifyModal(false);
+}
+document.getElementById('rulesBtn').onclick = openRulesModal;
+document.getElementById('rules-close').onclick = closeRulesModal;
+
+// 모달이 열리고 닫힐 때 허브 상단(헤더/네비)도 함께 어둡게 처리하도록 알림
+function notifyModal(open){
+  try{ window.parent.postMessage({type:'newchess-modal', open}, '*'); }catch(e){}
+}
+
+// ===== 전역 테마 (심플/브라운) — 토글은 허브에만 있고, 여기서는 반영만 =====
+const THEME_KEY = 'newchess-theme';
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+}
+applyTheme(localStorage.getItem(THEME_KEY) || 'simple');
+window.addEventListener('storage', (e) => {
+  if (e.key === THEME_KEY) applyTheme(e.newValue || 'simple');
+});
+
+// ── 시작 ──────────────────────────────────────────────────────────────────
 resetGame();
 </script>
 </body>
