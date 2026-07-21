@@ -367,10 +367,10 @@ function buildBishopBoards(){
   const g3 = makeGrid(7);
   g3[3][3]='piece-cell';
   for(let i=1;i<=3;i++){
-    g3[3-i][3-i]='mv';
-    g3[3-i][3+i]='mv';
-    g3[3+i][3-i]='mv';
-    g3[3+i][3+i]='mv';
+    g3[3-i][3-i]='mv-cap';
+    g3[3-i][3+i]='mv-cap';
+    g3[3+i][3-i]='mv-cap';
+    g3[3+i][3+i]='mv-cap';
   }
 
   return [
@@ -385,7 +385,7 @@ function buildBishopBoards(){
     { label:'육지 (비숍)',
       grid:g3,
       desc:'대각선 4방향 무제한 이동 및 캡처.',
-      legends:[['mv','#4a7a10','이동/캡처']] }
+      legends:[['mv-cap','#7a5500','이동/캡처']] }
   ];
 }
 
@@ -405,15 +405,15 @@ const PIECE_MODAL_DATA = {
         desc:'앞 직진 1칸: 이동만. 앞 대각 2방향: 이동+캡처 겸용.',
         legends:[['mv','#4a7a10','이동'],['mv-cap','#7a5500','이동+캡처']]
       },
-      { label:'육지 (은장)',
+      { label:'육지',
         grid: (()=>{
           const g=makeGrid(5); g[2][2]='piece-cell';
-          g[1][1]='mv'; g[1][2]='mv'; g[1][3]='mv';
-          g[3][1]='mv'; g[3][3]='mv';
+          g[1][1]='mv-cap'; g[1][2]='mv-cap'; g[1][3]='mv-cap';
+          g[3][1]='mv-cap'; g[3][3]='mv-cap';
           return g;
         })(),
         desc:'앞 3방향 + 뒤 대각 2방향 총 5방향 1칸 이동 및 캡처.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       }
     ]
   },
@@ -424,20 +424,20 @@ const PIECE_MODAL_DATA = {
         grid: (()=>{
           const g=makeGrid(7);
           g[3][3]='piece-cell';
-          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv-cap'; g[i][3]='mv-cap'; }
           return g;
         })(),
         desc:'직선 4방향 무제한 이동 및 캡처.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       },
       { label:'육지 (와지르)',
         grid: (()=>{
           const g=makeGrid(7); g[3][3]='piece-cell';
-          for(const[dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]) g[3+dr][3+dc]='mv';
+          for(const[dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]) g[3+dr][3+dc]='mv-cap';
           return g;
         })(),
         desc:'직선 4방향 1칸만 이동 및 캡처.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       }
     ]
   },
@@ -448,7 +448,7 @@ const PIECE_MODAL_DATA = {
   cannon: {
     name: '함포 (C)', icon:'◎',
     boards: [
-      { label:'바다 (로커스트) — 이동',
+      { label:'바다 — 이동',
         grid: (()=>{
           const g=makeGrid(7); g[3][3]='piece-cell';
           for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
@@ -457,30 +457,30 @@ const PIECE_MODAL_DATA = {
         desc:'직선 빈 칸 자유 이동(룩처럼). 적이나 아군 기물 앞에서 멈춤.',
         legends:[['mv','#4a7a10','이동']]
       },
-      { label:'바다 (로커스트) — 공격',
+      { label:'바다 — 공격',
         grid: (()=>{
           const g=makeGrid(7); g[3][3]='piece-cell';
           // 오른쪽: 적(허들)(3,5), 착지(3,6)
-          g[3][4]='mv'; g[3][5]='hurdle'; g[3][6]='locust-land';
+          g[3][5]='hurdle'; g[3][6]='locust-land';
           // 아래: 적(허들)(5,3), 착지(6,3)
-          g[4][3]='mv'; g[5][3]='hurdle'; g[6][3]='locust-land';
+          g[5][3]='hurdle'; g[6][3]='locust-land';
           // 왼쪽: 적(허들)(3,1), 착지(3,0)
-          g[3][2]='mv'; g[3][1]='hurdle'; g[3][0]='locust-land';
+          g[3][1]='hurdle'; g[3][0]='locust-land';
           // 위: 적(허들)(1,3), 착지(0,3)
-          g[2][3]='mv'; g[1][3]='hurdle'; g[0][3]='locust-land';
+          g[1][3]='hurdle'; g[0][3]='locust-land';
           return g;
         })(),
         desc:'직선 경로에서 첫 번째 적을 뛰어넘어 바로 뒷 빈 칸에 착지하며 적 제거. 아군은 넘을 수 없고, 착지칸이 막히면 불가.',
-        legends:[['mv','#4a7a10','이동'],['hurdle','#7a6000','적(허들)'],['locust-land','#7a2a7a','착지(제거)']]
+        legends:[['hurdle','#7a6000','적(허들)'],['locust-land','#7a2a7a','착지(제거)']]
       },
       { label:'육지 (룩)',
         grid: (()=>{
           const g=makeGrid(7); g[3][3]='piece-cell';
-          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv-cap'; g[i][3]='mv-cap'; }
           return g;
         })(),
         desc:'직선 4방향 무제한 이동 및 캡처.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       }
     ]
   },
@@ -492,12 +492,12 @@ const PIECE_MODAL_DATA = {
           const g=makeGrid(7); g[3][3]='piece-cell';
           for(const[dr,dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]){
             const r=3+dr,c=3+dc;
-            if(r>=0&&r<7&&c>=0&&c<7) g[r][c]='mv';
+            if(r>=0&&r<7&&c>=0&&c<7) g[r][c]='mv-cap';
           }
           return g;
         })(),
         desc:'L자(2칸+1칸) 점프. 지형에 관계없이 항상 동일. 중간 기물 무시.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       }
     ]
   },
@@ -507,25 +507,25 @@ const PIECE_MODAL_DATA = {
       { label:'바다 (퀸)',
         grid: (()=>{
           const g=makeGrid(7); g[3][3]='piece-cell';
-          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv'; g[i][3]='mv'; }
+          for(let i=0;i<7;i++) if(i!==3){ g[3][i]='mv-cap'; g[i][3]='mv-cap'; }
           for(let i=1;i<=3;i++){
-            if(3-i>=0){ g[3-i][3-i]='mv'; g[3-i][3+i]='mv'; }
-            if(3+i<7){ g[3+i][3-i]='mv'; g[3+i][3+i]='mv'; }
+            if(3-i>=0){ g[3-i][3-i]='mv-cap'; g[3-i][3+i]='mv-cap'; }
+            if(3+i<7){ g[3+i][3-i]='mv-cap'; g[3+i][3+i]='mv-cap'; }
           }
           return g;
         })(),
         desc:'직선+대각 8방향 무제한 이동 및 캡처.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       },
       { label:'육지 (만)',
         grid: (()=>{
           const g=makeGrid(7); g[3][3]='piece-cell';
           for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++)
-            if(dr||dc) g[3+dr][3+dc]='mv';
+            if(dr||dc) g[3+dr][3+dc]='mv-cap';
           return g;
         })(),
         desc:'8방향 1칸 이동 및 캡처.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       }
     ]
   },
@@ -536,11 +536,11 @@ const PIECE_MODAL_DATA = {
         grid: (()=>{
           const g=makeGrid(7); g[3][3]='piece-cell';
           for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++)
-            if(dr||dc) g[3+dr][3+dc]='mv';
+            if(dr||dc) g[3+dr][3+dc]='mv-cap';
           return g;
         })(),
         desc:'8방향 1칸 이동. 체크메이트 또는 육지 2턴 생존 시 승리.',
-        legends:[['mv','#4a7a10','이동/캡처']]
+        legends:[['mv-cap','#7a5500','이동/캡처']]
       }
     ]
   }

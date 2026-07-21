@@ -331,7 +331,7 @@ function getMoves(r,c,onlyCaptures=false,b=board) {
       break;
     }
     case 'R': [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>slide(dr,dc)); break;
-    case 'Q': // 용마: 비숍 슬라이드 + 와지르
+    case 'Q': // 퀸: 비숍 슬라이드 + 와지르
       [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>slide(dr,dc));
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>jump(dr,dc));
       break;
@@ -652,8 +652,8 @@ function executeMove(fr,fc,mv,autoPromote=null){
 
 function showPromotionModal(color){
   const opts=currentVersion==='basic'
-    ?[{type:'Q',label:'용마'},{type:'R',label:'룩'},{type:'N',label:'나이트'},{type:'Mann',label:'만'}]
-    :[{type:'Q',label:'용마'},{type:'R',label:'룩'},{type:'N',label:'나이트'},{type:'C',label:'포'}];
+    ?[{type:'Q',label:'퀸'},{type:'R',label:'룩'},{type:'N',label:'나이트'},{type:'Mann',label:'만'}]
+    :[{type:'Q',label:'퀸'},{type:'R',label:'룩'},{type:'N',label:'나이트'},{type:'C',label:'포'}];
   const container=document.getElementById('promo-options');
   container.innerHTML='';
   opts.forEach(opt=>{
@@ -885,7 +885,7 @@ function buildPieceModalData(){
       ]
     },
     Q: {
-      name: '용마', icon: '♕',
+      name: '퀸', icon: '♕',
       boards: [
         {
           label: '기본',
