@@ -640,8 +640,7 @@ function renderPieceContent(key) {
 
 // ===== AI ENGINE =====
 let aiEnabled = { W: false, B: false };
-let aiWorker = null;
-let aiThinkingFor = null;
+let aiThinking = false;
 let SEARCH_DEPTH = 5;
 
 document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
@@ -652,12 +651,6 @@ document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
 
 function setAIEnabled(color, enabled) {
   aiEnabled[color] = enabled;
-  if(!enabled && aiThinkingFor === color) {
-    // 탐색 중 끄면 worker 종료
-    if(aiWorker) { aiWorker.terminate(); aiWorker = null; }
-    aiThinkingFor = null;
-    document.getElementById('ai-thinking').textContent = '';
-  }
   if(enabled && turn === color && !gameOver) {
     setTimeout(() => triggerAI(), 100);
   }
@@ -666,172 +659,35 @@ document.getElementById('aiWhiteToggle').onchange = (e) => setAIEnabled('W', e.t
 document.getElementById('aiBlackToggle').onchange = (e) => setAIEnabled('B', e.target.checked);
 
 function triggerAI() {
-  if(gameOver || !aiEnabled[turn] || aiThinkingFor) return;
-  aiThinkingFor = turn;
+  if(gameOver || !aiEnabled[turn] || aiThinking) return;
+  aiThinking = true;
   const color = turn;
   document.getElementById('ai-thinking').textContent = (color==='W'?'백':'흑') + ' AI 계산 중...';
-
-  // Build worker code as blob
-  const workerCode = `
-    ${serializeFunctions()}
-    onmessage = function(e) {
-      const { boardData, color, campW, campB, needsSeaW, needsSeaB, maxDepth } = e.data;
-      const move = findBestMove(boardData, color, campW, campB, needsSeaW, needsSeaB, maxDepth);
-      postMessage(move);
-    };
-  `;
-  const blob = new Blob([workerCode], { type: 'application/javascript' });
-  const url = URL.createObjectURL(blob);
-  aiWorker = new Worker(url);
-  URL.revokeObjectURL(url);
-
-  aiWorker.onmessage = function(e) {
-    aiWorker = null;
-    aiThinkingFor = null;
-    document.getElementById('ai-thinking').textContent = '';
-    if(!aiEnabled[color] || gameOver || turn !== color) return;
-    const mv = e.data;
-    if(mv) {
-      selected = null;
-      doMove(mv.fc, mv.fr, mv.tc, mv.tr);
-    }
-  };
-
-  aiWorker.postMessage({
-    boardData: JSON.parse(JSON.stringify(board)),
-    color: turn,
-    campW: campCount['W'],
-    campB: campCount['B'],
-    needsSeaW: campNeedsSea['W'],
-    needsSeaB: campNeedsSea['B'],
-    maxDepth: SEARCH_DEPTH
-  });
+  setTimeout(() => runAIMove(color), 50);
 }
 
-function serializeFunctions() {
-  return `
-const FILES = ${JSON.stringify(['a','b','c','d','e','f','g','h','i','j'])};
-
-function isLand(col, row) {
-  return col >= 2 && col <= 7 && row >= 3 && row <= 6;
-}
-function inBounds(c,r){ return c>=0&&c<10&&r>=0&&r<10; }
-
-function getRawMoves(col, row, b, color){
-  const piece = b[row][col];
-  if(!piece) return [];
-  const enemy = color==='W'?'B':'W';
-  const land = isLand(col, row);
-  const moves = [];
-  function addEmpty(c,r){ if(inBounds(c,r)&&!b[r][c]) moves.push({col:c,row:r}); }
-  function addCapture(c,r){ if(inBounds(c,r)&&b[r][c]&&b[r][c].color===enemy) moves.push({col:c,row:r}); }
-  function addFree(c,r){ if(inBounds(c,r)&&(!b[r][c]||b[r][c].color===enemy)) moves.push({col:c,row:r}); }
-  const t = piece.type;
-  if(t==='king'){
-    for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++) if(dc||dr) addFree(col+dc,row+dr);
-  } else if(t==='pawn'){
-    const dir = color==='W'?1:-1;
-    if(!land){
-      addEmpty(col,row+dir); addEmpty(col+1,row+dir); addEmpty(col-1,row+dir);
-      addCapture(col+1,row+dir); addCapture(col-1,row+dir);
-    } else {
-      for(const [dc,dr] of [[0,dir],[1,dir],[-1,dir],[1,-dir],[-1,-dir]]) addFree(col+dc,row+dr);
-    }
-  } else if(t==='rook'){
-    if(!land) slideRook(col,row,b,color,moves);
-    else for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]) addFree(col+dc,row+dr);
-  } else if(t==='bishop'){
-    if(!land) movesHarpooner(col,row,b,color,moves);
-    else slideBishop(col,row,b,color,moves);
-  } else if(t==='queen'){
-    if(!land){ slideRook(col,row,b,color,moves); slideBishop(col,row,b,color,moves); }
-    else for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++) if(dc||dr) addFree(col+dc,row+dr);
-  } else if(t==='knight'){
-    for(const[dc,dr] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) addFree(col+dc,row+dr);
-  } else if(t==='cannon'){
-    if(!land) movesCannon(col,row,b,color,moves);
-    else slideRook(col,row,b,color,moves);
-  }
-  return moves;
-}
-
-function slideRook(col,row,b,color,moves){
-  const enemy=color==='W'?'B':'W';
-  for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
-    let c=col+dc,r=row+dr;
-    while(inBounds(c,r)){
-      if(b[r][c]){ if(b[r][c].color===enemy) moves.push({col:c,row:r}); break; }
-      moves.push({col:c,row:r}); c+=dc; r+=dr;
-    }
-  }
-}
-function slideBishop(col,row,b,color,moves){
-  const enemy=color==='W'?'B':'W';
-  for(const[dc,dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
-    let c=col+dc,r=row+dr;
-    while(inBounds(c,r)){
-      if(b[r][c]){ if(b[r][c].color===enemy) moves.push({col:c,row:r}); break; }
-      moves.push({col:c,row:r}); c+=dc; r+=dr;
-    }
-  }
-}
-function movesHarpooner(col,row,b,color,moves){
-  const enemy=color==='W'?'B':'W';
-  for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++){
-    if(!dc&&!dr) continue;
-    const nc=col+dc,nr=row+dr;
-    if(inBounds(nc,nr)&&(!b[nr][nc]||b[nr][nc].color===enemy)) moves.push({col:nc,row:nr});
-  }
-  for(const[dc,dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
-    let c=col+dc,r=row+dr,prev_c=col,prev_r=row;
-    while(inBounds(c,r)){
-      if(b[r][c]){
-        if(b[r][c].color===enemy) moves.push({col:c,row:r});
-        else if(prev_c!==col||prev_r!==row){
-          if(!moves.some(m=>m.col===prev_c&&m.row===prev_r)) moves.push({col:prev_c,row:prev_r});
-        }
-        break;
-      }
-      prev_c=c; prev_r=r; c+=dc; r+=dr;
-    }
-  }
-}
-function movesCannon(col,row,b,color,moves){
-  const enemy=color==='W'?'B':'W';
-  for(const[dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
-    let c=col+dc,r=row+dr;
-    while(inBounds(c,r)){ if(b[r][c]) break; moves.push({col:c,row:r}); c+=dc; r+=dr; }
-    if(inBounds(c,r)&&b[r][c]&&b[r][c].color===enemy){
-      const lc=c+dc,lr=r+dr;
-      if(inBounds(lc,lr)&&!b[lr][lc]) moves.push({col:lc,row:lr});
-    }
+function runAIMove(color) {
+  aiThinking = false;
+  document.getElementById('ai-thinking').textContent = '';
+  if(gameOver || !aiEnabled[color] || turn !== color) return;
+  const mv = findBestMove(board, color, campCount['W'], campCount['B'], campNeedsSea['W'], campNeedsSea['B'], SEARCH_DEPTH);
+  if(mv){
+    selected = null;
+    doMove(mv.fc, mv.fr, mv.tc, mv.tr);
   }
 }
 
-function findKing(color,b){
-  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
-    if(b[r][c]&&b[r][c].color===color&&b[r][c].type==='king') return {col:c,row:r};
-  return null;
-}
-function isInCheck(color,b){
-  const kp=findKing(color,b); if(!kp) return false;
-  const enemy=color==='W'?'B':'W';
-  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
-    if(b[r][c]&&b[r][c].color===enemy){
-      const mv=getRawMoves(c,r,b,enemy);
-      if(mv.some(m=>m.col===kp.col&&m.row===kp.row)) return true;
-    }
-  return false;
-}
-function getLegalMoves(col,row,b,color){
-  return getRawMoves(col,row,b,color).filter(m=>{
-    const nb=JSON.parse(JSON.stringify(b));
-    nb[m.row][m.col]=nb[row][col]; nb[row][col]=null;
-    return !isInCheck(color,nb);
-  });
-}
-
-const PIECE_VALUES = { pawn:1, knight:3, bishop:3.5, cannon:4.5, rook:5, queen:9, king:0 };
+// ===== AI 엔진: 메인스레드 negamax + 알파베타, 고정 깊이 + 3초 데드라인 =====
+// 지형별 기물가치 (2배 스케일, 확정값)
+const PIECE_VALUES = {
+  pawn:  { sea: 3,  land: 4  },
+  knight:{ sea: 6,  land: 6  },
+  bishop:{ sea: 5,  land: 6  },
+  rook:  { sea: 10, land: 5  },
+  queen: { sea: 18, land: 8  },
+  cannon:{ sea: 7,  land: 10 },
+  king:  { sea: 0,  land: 0  }
+};
 
 function applyMove(b, fc, fr, tc, tr) {
   const nb = JSON.parse(JSON.stringify(b));
@@ -849,14 +705,6 @@ function applyMove(b, fc, fr, tc, tr) {
   return nb;
 }
 
-function kingDist(b, color) {
-  // 상대 킹과의 거리 (맨해튼)
-  const myKing = findKing(color, b);
-  const oppKing = findKing(color==='W'?'B':'W', b);
-  if(!myKing||!oppKing) return 20;
-  return Math.abs(myKing.col-oppKing.col)+Math.abs(myKing.row-oppKing.row);
-}
-
 function landCenterDist(col, row) {
   // 육지 중앙 (4.5, 4.5)까지 거리
   return Math.abs(col-4.5)+Math.abs(row-4.5);
@@ -869,15 +717,7 @@ function evaluate(b, campW, campB, needsSeaW, needsSeaB) {
   for(let r=0;r<10;r++) for(let c=0;c<10;c++){
     const p=b[r][c]; if(!p) continue;
     if(p.type==='king'){ if(p.color==='W') wKingPos={c,r}; else bKingPos={c,r}; continue; }
-    let val = PIECE_VALUES[p.type] || 0;
-    // 지형 보정
-    if(!isLand(c,r)){
-      if(p.type==='rook'||p.type==='queen'||p.type==='cannon') val *= 1.1;
-    } else {
-      if(p.type==='cannon') val *= 1.2;
-      if(p.type==='rook') val *= 0.5;
-      if(p.type==='queen') val *= 0.4;
-    }
+    const val = PIECE_VALUES[p.type][isLand(c,r) ? 'land' : 'sea'];
     score += p.color==='W' ? val : -val;
   }
 
@@ -893,31 +733,22 @@ function evaluate(b, campW, campB, needsSeaW, needsSeaB) {
   if(needsSeaB) score += 3;
 
   // 백 킹 육지 중앙 진입 유도 (캠프메이트 능동 추구)
-  if(wKingPos){
-    if(isLand(wKingPos.c, wKingPos.r)){
-      score += 3 - landCenterDist(wKingPos.c, wKingPos.r) * 0.3;
-    }
+  if(wKingPos && isLand(wKingPos.c, wKingPos.r)){
+    score += 3 - landCenterDist(wKingPos.c, wKingPos.r) * 0.3;
   }
   // 흑 킹 육지 중앙 진입 유도
-  if(bKingPos){
-    if(isLand(bKingPos.c, bKingPos.r)){
-      score -= 3 - landCenterDist(bKingPos.c, bKingPos.r) * 0.3;
-    }
+  if(bKingPos && isLand(bKingPos.c, bKingPos.r)){
+    score -= 3 - landCenterDist(bKingPos.c, bKingPos.r) * 0.3;
   }
 
-  // 상대 킹 압박: 킹들이 가까울수록 공격 기회 (약한 보너스)
+  // 상대 킹 압박(근사치): 매 노드마다 전체 기물의 getRawMoves를 재호출하면
+  // depth 4~5가 3초 안에 안 끝나므로, 이미 계산된 킹 간 거리 + 우세 여부만으로
+  // 저렴하게 근사한다 — 우세한 쪽이 상대 킹에 가까울수록 추격 보너스.
   if(wKingPos && bKingPos){
     const dist = Math.abs(wKingPos.c-bKingPos.c)+Math.abs(wKingPos.r-bKingPos.r);
-    // 백 입장에서 흑 킹에 압박 가하는 기물 수 보너스
-    let wAttackers=0, bAttackers=0;
-    for(let r=0;r<10;r++) for(let c=0;c<10;c++){
-      const p=b[r][c]; if(!p||p.type==='king') continue;
-      const mv=getRawMoves(c,r,b,p.color);
-      if(p.color==='W' && mv.some(m=>m.col===bKingPos.c&&m.row===bKingPos.r)) wAttackers++;
-      if(p.color==='B' && mv.some(m=>m.col===wKingPos.c&&m.row===wKingPos.r)) bAttackers++;
-    }
-    score += wAttackers * 0.5;
-    score -= bAttackers * 0.5;
+    const closeness = (18 - dist) * 0.15;
+    if(score > 0) score += closeness;
+    else if(score < 0) score -= closeness;
   }
 
   return score;
@@ -953,70 +784,65 @@ function updateCampAI(nb, mover, campW, campB, needsSeaW, needsSeaB) {
 let searchStart = 0;
 const TIME_LIMIT = 3000; // 3초 (4개 게임 공통 제한)
 
-function minimax(b, depth, alpha, beta, maximizing, campW, campB, needsSeaW, needsSeaB) {
-  if(campW>=3) return 9999;
-  if(campB>=3) return -9999;
-  if(Date.now()-searchStart > TIME_LIMIT) return evaluate(b,campW,campB,needsSeaW,needsSeaB);
-  if(depth === 0) return evaluate(b, campW, campB, needsSeaW, needsSeaB);
-  const color = maximizing ? 'W' : 'B';
-  let moves = [];
-  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
-    if(b[r][c]&&b[r][c].color===color)
-      for(const m of getLegalMoves(c,r,b,color)) moves.push({fc:c,fr:r,tc:m.col,tr:m.row});
-  if(moves.length===0) return maximizing ? -9999 : 9999;
-
-  if(maximizing){
-    let best=-Infinity;
-    for(const mv of moves){
-      if(Date.now()-searchStart > TIME_LIMIT) break;
-      const nb=applyMove(b,mv.fc,mv.fr,mv.tc,mv.tr);
-      const nc=updateCampAI(nb,'W',campW,campB,needsSeaW,needsSeaB);
-      const val=minimax(nb,depth-1,alpha,beta,false,nc.cW,nc.cB,nc.nsW,nc.nsB);
-      best=Math.max(best,val); alpha=Math.max(alpha,val);
-      if(beta<=alpha) break;
-    }
-    return best;
-  } else {
-    let best=Infinity;
-    for(const mv of moves){
-      if(Date.now()-searchStart > TIME_LIMIT) break;
-      const nb=applyMove(b,mv.fc,mv.fr,mv.tc,mv.tr);
-      const nc=updateCampAI(nb,'B',campW,campB,needsSeaW,needsSeaB);
-      const val=minimax(nb,depth-1,alpha,beta,true,nc.cW,nc.cB,nc.nsW,nc.nsB);
-      best=Math.min(best,val); beta=Math.min(beta,val);
-      if(beta<=alpha) break;
-    }
-    return best;
-  }
-}
-
-function findBestMove(b, color, campW, campB, needsSeaW, needsSeaB, maxDepth) {
-  searchStart = Date.now();
-  const maximizing = color==='W';
-  let bestMove = null;
+function rootMoves(b, color) {
   const moves = [];
   for(let r=0;r<10;r++) for(let c=0;c<10;c++)
     if(b[r][c]&&b[r][c].color===color)
-      for(const m of getLegalMoves(c,r,b,color)) moves.push({fc:c,fr:r,tc:m.col,tr:m.row});
-  for(let i=moves.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [moves[i],moves[j]]=[moves[j],moves[i]]; }
+      for(const m of getLegalMoves(c,r,b,color)) moves.push({fc:c,fr:r,tc:m.col,tr:m.row,capture:!!b[m.row][m.col]});
+  return moves;
+}
 
-  // iterative deepening: 깊이 1부터 선택한 최대 깊이(또는 시간 초과) 전까지 깊이 증가
-  for(let depth=1; depth<=maxDepth; depth++){
+function negamax(b, depth, alpha, beta, color, campW, campB, needsSeaW, needsSeaB) {
+  if(campW>=3) return color==='W' ? 9999 : -9999;
+  if(campB>=3) return color==='W' ? -9999 : 9999;
+  if(depth===0 || Date.now()-searchStart > TIME_LIMIT){
+    const m = evaluate(b, campW, campB, needsSeaW, needsSeaB);
+    return color==='W' ? m : -m;
+  }
+  const moves = rootMoves(b, color);
+  if(moves.length===0){
+    const m = evaluate(b, campW, campB, needsSeaW, needsSeaB);
+    return color==='W' ? m : -m;
+  }
+  moves.sort((a,c) => (c.capture?1:0) - (a.capture?1:0));
+
+  const opp = color==='W'?'B':'W';
+  let best = -Infinity;
+  for(const mv of moves){
+    const nb = applyMove(b, mv.fc, mv.fr, mv.tc, mv.tr);
+    const nc = updateCampAI(nb, color, campW, campB, needsSeaW, needsSeaB);
+    const val = -negamax(nb, depth-1, -beta, -alpha, opp, nc.cW, nc.cB, nc.nsW, nc.nsB);
+    if(val > best) best = val;
+    if(best > alpha) alpha = best;
+    if(alpha >= beta) break;
     if(Date.now()-searchStart > TIME_LIMIT) break;
-    let best = maximizing ? -Infinity : Infinity;
-    let currentBest = null;
-    for(const mv of moves){
-      if(Date.now()-searchStart > TIME_LIMIT) break;
-      const nb=applyMove(b,mv.fc,mv.fr,mv.tc,mv.tr);
-      const nCamp=updateCampAI(nb,color,campW,campB,needsSeaW,needsSeaB);
-      const val=minimax(nb,depth-1,-Infinity,Infinity,!maximizing,nCamp.cW,nCamp.cB,nCamp.nsW,nCamp.nsB);
-      if(maximizing?val>best:val<best){ best=val; currentBest=mv; }
-    }
-    if(currentBest) bestMove=currentBest;
+  }
+  return best;
+}
+
+function findBestMove(b, color, campW, campB, needsSeaW, needsSeaB, maxDepth) {
+  const moves = rootMoves(b, color);
+  if(moves.length===0) return null;
+
+  searchStart = Date.now();
+
+  // 동점일 때 다양성을 위해 순서 섞기
+  for(let i=moves.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [moves[i],moves[j]]=[moves[j],moves[i]]; }
+  moves.sort((a,c) => (c.capture?1:0) - (a.capture?1:0));
+
+  const opp = color==='W'?'B':'W';
+  let alpha = -Infinity, beta = Infinity;
+  let bestMove = moves[0], bestVal = -Infinity;
+
+  for(const mv of moves){
+    if(Date.now()-searchStart > TIME_LIMIT) break;
+    const nb = applyMove(b, mv.fc, mv.fr, mv.tc, mv.tr);
+    const nc = updateCampAI(nb, color, campW, campB, needsSeaW, needsSeaB);
+    const val = -negamax(nb, maxDepth-1, -beta, -alpha, opp, nc.cW, nc.cB, nc.nsW, nc.nsB);
+    if(val > bestVal){ bestVal = val; bestMove = mv; }
+    if(bestVal > alpha) alpha = bestVal;
   }
   return bestMove;
-}
-  `;
 }
 // ===== END AI ENGINE =====
 
@@ -1031,8 +857,7 @@ function resetGame() {
   promotionPending = null;
   capturedByWhite = [];
   capturedByBlack = [];
-  if(aiWorker){ aiWorker.terminate(); aiWorker=null; }
-  aiThinkingFor = null;
+  aiThinking = false;
   document.getElementById('ai-thinking').textContent = '';
   document.getElementById('promotion-modal').classList.remove('show');
   notifyModal(false);
@@ -1426,11 +1251,11 @@ function slideBishop(col,row,b,color,moves){
 
 function movesHarpooner(col,row,b,color,moves){
   const enemy=color==='W'?'B':'W';
-  // 1. Mann: 8방향 1칸 이동+캡처
+  // 1. 8방향 1칸 이동 전용 (캡처 불가 — 캡처는 아래 대각선 슬라이드로만 발생)
   for(let dc=-1;dc<=1;dc++) for(let dr=-1;dr<=1;dr++){
     if(!dc&&!dr) continue;
     const nc=col+dc, nr=row+dr;
-    if(inBounds(nc,nr)&&(!b[nr][nc]||b[nr][nc].color===enemy))
+    if(inBounds(nc,nr)&&!b[nr][nc])
       moves.push({col:nc,row:nr});
   }
   // 2. 대각 방향 작살: 적 = 비숍 캡처, 아군 = 직전 칸까지 슬라이드
