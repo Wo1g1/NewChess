@@ -74,6 +74,7 @@ body {
 .panel h3 { font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
 #turn-display { font-size:15px; font-weight:600; color:var(--accent); text-align:center; }
 #status-msg { font-style:italic; font-size:.85rem; color:var(--text-dim); text-align:center; }
+#ai-thinking { font-size:10px; color:var(--accent); min-height:14px; text-align:center; margin-top:6px; }
 
 .score-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:12px; }
 .score-row:not(:last-child) { border-bottom:1px solid var(--border); }
@@ -164,6 +165,24 @@ button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border
     </div>
     <button onclick="resetGame()">새 게임</button>
     <button onclick="undoMove()">되돌리기</button>
+    <div class="panel">
+      <h3>AI (3초 제한)</h3>
+      <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
+        <label style="display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="aiDepth" value="4"> 깊이4
+        </label>
+        <label style="display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="aiDepth" value="5" checked> 깊이5
+        </label>
+      </div>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:6px;">
+        <input type="checkbox" id="aiBlackToggle"> 흑 AI
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+        <input type="checkbox" id="aiWhiteToggle"> 백 AI
+      </label>
+      <div id="ai-thinking"></div>
+    </div>
   </div>
 
   <div class="mid-col">
@@ -232,6 +251,8 @@ function resetGame() {
   pendingDestroy = [];
   gameOver = false;
   moveCount = 0;
+  aiThinking = false;
+  document.getElementById('ai-thinking').textContent = '';
   document.getElementById('gameOver').classList.remove('show');
   document.getElementById('log').innerHTML = '';
   render();
@@ -364,6 +385,7 @@ function doPlace(r, f) {
 
   currentTurn = nextTurn;
   render();
+  maybeTriggerAI();
 }
 
 function showGameOver(winner) {
@@ -382,6 +404,137 @@ function undoMove() {
   document.getElementById('log').innerHTML = snap.logHTML;
   document.getElementById('gameOver').classList.remove('show');
   render();
+}
+
+// ── AI 엔진: 메인스레드 negamax + 알파베타, 고정 깊이 + 3초 데드라인 ───────────
+// 체스류가 아니라 기물가치 개념이 없음 — 모빌리티 차 / 2층(겹침) 개수 차 / 순위협 차로 평가.
+let aiEnabled = { b:false, w:false };
+let aiThinking = false;
+let SEARCH_DEPTH = 5;
+
+document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
+  radio.onchange = (e) => {
+    if(e.target.checked) SEARCH_DEPTH = parseInt(e.target.value);
+  };
+});
+document.getElementById('aiBlackToggle').onchange = (e) => { aiEnabled.b = e.target.checked; maybeTriggerAI(); };
+document.getElementById('aiWhiteToggle').onchange = (e) => { aiEnabled.w = e.target.checked; maybeTriggerAI(); };
+
+function maybeTriggerAI(){
+  if(gameOver || aiThinking) return;
+  if(aiEnabled[currentTurn]){
+    aiThinking = true;
+    const label = currentTurn === 'b' ? '흑' : '백';
+    document.getElementById('ai-thinking').textContent = label + ' AI 계산 중...';
+    setTimeout(runAIMove, 50);
+  }
+}
+
+function runAIMove(){
+  aiThinking = false;
+  document.getElementById('ai-thinking').textContent = '';
+  if(gameOver) return;
+  const mv = findBestMove(board, pendingDestroy, currentTurn, SEARCH_DEPTH);
+  if(!mv) return;
+  doPlace(mv[0], mv[1]);
+}
+
+// 순수 함수: b/pendingDestroy를 복제해 다음 상태를 반환 (실제 게임 상태에 영향 없음)
+function applyMoveSim(b, pd, r, f, color){
+  const nb = b.map(row => row.map(cell => cell ? {...cell} : null));
+  const cell = nb[r][f];
+  const isStack = cell && cell.color === color && cell.layer === 1;
+  nb[r][f] = { color, layer: isStack ? 2 : 1 };
+
+  for (const key of pd) {
+    const [dr, df] = key.split(',').map(Number);
+    if (nb[dr][df] && nb[dr][df].layer === 1) nb[dr][df] = null;
+  }
+
+  const nextPending = [];
+  if (nb[r][f].layer === 2) {
+    for (const [nr, nf] of neighbors(r, f)) {
+      const n = nb[nr][nf];
+      if (n && n.color !== color && n.layer === 1) nextPending.push(`${nr},${nf}`);
+    }
+  }
+  return { board: nb, pendingDestroy: nextPending };
+}
+
+// color 시점 평가 (양수 = color에게 유리). 모빌리티차×3 + 2층개수차×5 + 순위협차×2 (초기값, 추후 자가대국으로 튜닝 예정)
+function evaluateStack(b, color){
+  const opp = color === 'b' ? 'w' : 'b';
+  const myMoves = getValidMoves(color, b).length;
+  const oppMoves = getValidMoves(opp, b).length;
+  const mobilityDiff = myMoves - oppMoves;
+
+  let myLayer2 = 0, oppLayer2 = 0;
+  for (let r=0;r<SIZE;r++) for (let f=0;f<SIZE;f++){
+    const cell = b[r][f]; if (!cell || cell.layer !== 2) continue;
+    if (cell.color === color) myLayer2++; else oppLayer2++;
+  }
+  const layer2Diff = myLayer2 - oppLayer2;
+
+  const threats = calcThreats(b);
+  let myThreatsOnOpp = 0, oppThreatsOnMe = 0;
+  for (const key in threats) {
+    const [r,f] = key.split(',').map(Number);
+    const stone = b[r][f]; if (!stone) continue;
+    if (stone.color === opp) myThreatsOnOpp++;
+    else if (stone.color === color) oppThreatsOnMe++;
+  }
+  const threatDiff = myThreatsOnOpp - oppThreatsOnMe;
+
+  return mobilityDiff*3 + layer2Diff*5 + threatDiff*2;
+}
+
+let searchStart = 0;
+const TIME_LIMIT = 3000; // 3초 (4개 게임 공통 제한)
+
+function negamaxStack(b, pd, depth, alpha, beta, color){
+  const moves = getValidMoves(color, b);
+  if (moves.length === 0) return -9999; // color 차례인데 둘 곳이 없음 → color 패배(봉쇄)
+  if (depth === 0 || Date.now()-searchStart > TIME_LIMIT) return evaluateStack(b, color);
+
+  // 겹침(2층 생성) 수를 우선 탐색 — 위협/방어를 만드는 수라 가지치기에 유리
+  moves.sort((a,c) => {
+    const as = b[a[0]][a[1]] && b[a[0]][a[1]].color===color && b[a[0]][a[1]].layer===1;
+    const cs = b[c[0]][c[1]] && b[c[0]][c[1]].color===color && b[c[0]][c[1]].layer===1;
+    return (cs?1:0) - (as?1:0);
+  });
+
+  const opp = color === 'b' ? 'w' : 'b';
+  let best = -Infinity;
+  for (const [r,f] of moves) {
+    const { board: nb, pendingDestroy: npd } = applyMoveSim(b, pd, r, f, color);
+    const val = -negamaxStack(nb, npd, depth-1, -beta, -alpha, opp);
+    if (val > best) best = val;
+    if (best > alpha) alpha = best;
+    if (alpha >= beta) break;
+    if (Date.now()-searchStart > TIME_LIMIT) break;
+  }
+  return best;
+}
+
+function findBestMove(b, pd, color, maxDepth){
+  const moves = getValidMoves(color, b);
+  if (moves.length === 0) return null;
+
+  searchStart = Date.now();
+  for (let i=moves.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [moves[i],moves[j]]=[moves[j],moves[i]]; }
+
+  const opp = color === 'b' ? 'w' : 'b';
+  let alpha = -Infinity, beta = Infinity;
+  let bestMove = moves[0], bestVal = -Infinity;
+
+  for (const [r,f] of moves) {
+    if (Date.now()-searchStart > TIME_LIMIT) break;
+    const { board: nb, pendingDestroy: npd } = applyMoveSim(b, pd, r, f, color);
+    const val = -negamaxStack(nb, npd, maxDepth-1, -beta, -alpha, opp);
+    if (val > bestVal) { bestVal = val; bestMove = [r,f]; }
+    if (bestVal > alpha) alpha = bestVal;
+  }
+  return bestMove;
 }
 
 function makeStoneEl(color, layer) {
