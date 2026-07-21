@@ -440,10 +440,9 @@ function checkPromotion(r,c,piece,fromR,wasDemotion) {
 
 // ── 기물 표시 ─────────────────────────────────────────────────────────────
 function typeToSym(type,color) {
-  const isW=color==='w';
-  return {K:isW?'♔':'♚',Q:isW?'♕':'♛',R:isW?'♖':'♜',N:isW?'♘':'♞',P:isW?'♙':'♟',
-          Mann:isW?'♕':'♛',Wazir:isW?'♖':'♜',
-          C:isW?'♗':'♝',FC:isW?'♗':'♝'}[type]||'?';
+  return {K:'♚',Q:'♛',R:'♜',N:'♞',P:'♟',
+          Mann:'♛',Wazir:'♜',
+          C:'♝',FC:'♝'}[type]||'?';
 }
 function isDemotedType(type){return type==='Mann'||type==='Wazir'||type==='FC';}
 

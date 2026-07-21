@@ -78,7 +78,7 @@
   .sq.selected{outline:3px solid #f2c744; outline-offset:-3px;}
   .sq.inCheck{outline:3px solid #ff3b3b; outline-offset:-3px;}
   .glyph.white-piece{color:#ffffff; text-shadow:0 0 1px #000, 0 0 2px #000; position:relative; z-index:2;}
-  .glyph.black-piece{color:#000000; position:relative; z-index:2;}
+  .glyph.black-piece{color:#000000; text-shadow:0 0 1px rgba(255,255,255,.35); position:relative; z-index:2;}
   .rowlabel, .collabel{
     display:flex;
     align-items:center;
@@ -291,7 +291,7 @@
 const ROWS = 10, COLS = 10;
 
 const GLYPH = {
-  w: {K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙'},
+  w: {K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞', P:'♟'},
   b: {K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞', P:'♟'}
 };
 
