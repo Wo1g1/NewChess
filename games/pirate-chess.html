@@ -220,6 +220,7 @@ button:hover { background: var(--btn-accent-bg); }
     </div>
     <button onclick="resetGame()">새 게임</button>
     <button onclick="undoMove()">되돌리기</button>
+    <button onclick="flipBoard()">보드 뒤집기</button>
     <div id="ai-box" class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -245,10 +246,7 @@ button:hover { background: var(--btn-accent-bg); }
       <div id="rank-labels"></div>
       <div id="board-col">
         <div id="board"></div>
-        <div id="file-labels">
-          <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span>
-          <span>f</span><span>g</span><span>h</span><span>i</span><span>j</span>
-        </div>
+        <div id="file-labels"></div>
       </div>
     </div>
     <div id="log-box"><div id="log"></div></div>
@@ -905,15 +903,37 @@ function resetGame() {
   renderLog();
   setStatus('');
   buildRankLabels();
+  buildFileLabels();
+  render();
+}
+
+let boardFlipped = false;
+
+function flipBoard(){
+  boardFlipped = !boardFlipped;
+  buildRankLabels();
+  buildFileLabels();
   render();
 }
 
 function buildRankLabels() {
   const el = document.getElementById('rank-labels');
   el.innerHTML = '';
-  for(let r=9;r>=0;r--){
+  for(let vr=0;vr<10;vr++){
+    const r = boardFlipped ? vr : (9-vr);
     const s = document.createElement('span');
     s.textContent = r+1;
+    el.appendChild(s);
+  }
+}
+
+function buildFileLabels() {
+  const el = document.getElementById('file-labels');
+  el.innerHTML = '';
+  for(let vc=0;vc<10;vc++){
+    const c = boardFlipped ? (9-vc) : vc;
+    const s = document.createElement('span');
+    s.textContent = FILES[c];
     el.appendChild(s);
   }
 }
@@ -947,9 +967,11 @@ function renderLog() {
 function render() {
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
-  // 렌더: rank 10 (row9) 맨 위 → rank 1 (row0) 맨 아래
-  for(let r=9; r>=0; r--){
-    for(let c=0; c<10; c++){
+  // 렌더: 뒤집기 상태에 따라 rank10/rank1 중 어느 쪽이 맨 위로 오는지 결정
+  for(let vr=0; vr<10; vr++){
+    const r = boardFlipped ? vr : (9-vr);
+    for(let vc=0; vc<10; vc++){
+      const c = boardFlipped ? (9-vc) : vc;
       const cell = document.createElement('div');
       cell.className = 'cell ' + cellClass(c, r);
       cell.dataset.col = c;
@@ -974,8 +996,10 @@ function render() {
 }
 
 function cellIndex(col, row) {
-  // 화면 상 인덱스: row9=첫번째 줄
-  return (9 - row) * 10 + col;
+  // 화면 상 인덱스 (뒤집기 상태 반영)
+  const vr = boardFlipped ? row : (9 - row);
+  const vc = boardFlipped ? (9 - col) : col;
+  return vr * 10 + vc;
 }
 
 function highlightMoves(col, row) {

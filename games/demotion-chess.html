@@ -178,6 +178,7 @@
     </div>
     <button onclick="resetGame()">새 게임</button>
     <button onclick="undoMove()">되돌리기</button>
+    <button onclick="flipBoard()">보드 뒤집기</button>
     <div class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -495,6 +496,13 @@ function typeToSym(type,color) {
 function isDemotedType(type){return type==='Mann'||type==='Wazir'||type==='FC';}
 
 // ── 렌더 ──────────────────────────────────────────────────────────────────
+let boardFlipped = false;
+
+function flipBoard(){
+  boardFlipped = !boardFlipped;
+  renderBoard();
+}
+
 function renderBoard() {
   const S=getBoardSize(); const CS=getCellSize();
   const boardEl=document.getElementById('board');
@@ -502,36 +510,42 @@ function renderBoard() {
   boardEl.style.gridTemplateRows=`repeat(${S},${CS}px)`;
   boardEl.innerHTML='';
 
-  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
-    const cell=document.createElement('div');
-    cell.className='cell '+((r+c)%2===0?'light':'dark');
-    cell.style.cssText=`width:${CS}px;height:${CS}px;`;
-    if(selected?.r===r&&selected?.c===c) cell.classList.add('selected');
-    if(validMoves.some(m=>m.r===r&&m.c===c&&!m.capture)) cell.classList.add('valid-move');
-    if(validMoves.some(m=>m.r===r&&m.c===c&&m.capture)) cell.classList.add('valid-capture');
-    const piece=board[r][c];
-    if(piece){
-      const span=document.createElement('span');
-      span.className='piece '+(piece.color==='w'?'white':'black');
-      span.style.fontSize=Math.floor(CS*PIECE_SIZE_RATIO)+'px';
-      if(isDemotedType(piece.type)) span.classList.add('demoted');
-      span.textContent=typeToSym(piece.type,piece.color);
-      cell.appendChild(span);
+  for(let vr=0;vr<S;vr++){
+    const r = boardFlipped ? (S-1-vr) : vr;
+    for(let vc=0;vc<S;vc++){
+      const c = boardFlipped ? (S-1-vc) : vc;
+      const cell=document.createElement('div');
+      cell.className='cell '+((r+c)%2===0?'light':'dark');
+      cell.style.cssText=`width:${CS}px;height:${CS}px;`;
+      if(selected?.r===r&&selected?.c===c) cell.classList.add('selected');
+      if(validMoves.some(m=>m.r===r&&m.c===c&&!m.capture)) cell.classList.add('valid-move');
+      if(validMoves.some(m=>m.r===r&&m.c===c&&m.capture)) cell.classList.add('valid-capture');
+      const piece=board[r][c];
+      if(piece){
+        const span=document.createElement('span');
+        span.className='piece '+(piece.color==='w'?'white':'black');
+        span.style.fontSize=Math.floor(CS*PIECE_SIZE_RATIO)+'px';
+        if(isDemotedType(piece.type)) span.classList.add('demoted');
+        span.textContent=typeToSym(piece.type,piece.color);
+        cell.appendChild(span);
+      }
+      cell.addEventListener('click',()=>handleClick(r,c));
+      boardEl.appendChild(cell);
     }
-    cell.addEventListener('click',()=>handleClick(r,c));
-    boardEl.appendChild(cell);
   }
 
   // 좌표
   const fl=document.getElementById('file-labels'); fl.innerHTML='';
   const files='abcdefgh'.slice(0,S);
-  files.split('').forEach(f=>{
+  for(let vc=0;vc<S;vc++){
+    const c = boardFlipped ? (S-1-vc) : vc;
     const d=document.createElement('div');
-    d.className='coord-label'; d.style.width=CS+'px'; d.textContent=f;
+    d.className='coord-label'; d.style.width=CS+'px'; d.textContent=files[c];
     fl.appendChild(d);
-  });
+  }
   const rl=document.getElementById('rank-labels'); rl.innerHTML='';
-  for(let r=0;r<S;r++){
+  for(let vr=0;vr<S;vr++){
+    const r = boardFlipped ? (S-1-vr) : vr;
     const d=document.createElement('div');
     d.className='rank-label';
     d.style.cssText=`height:${CS}px;display:flex;align-items:center;justify-content:center;`;

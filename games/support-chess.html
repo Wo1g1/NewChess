@@ -243,6 +243,7 @@
     </div>
     <button id="resetBtn">새 게임</button>
     <button id="undoBtn">되돌리기</button>
+    <button id="flipBtn">보드 뒤집기</button>
     <div class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -747,6 +748,14 @@ function renderLog(){
 const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수
 const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
 
+let boardFlipped = false;
+
+function flipBoard(){
+  boardFlipped = !boardFlipped;
+  buildBoardDom();
+  render();
+}
+
 function buildBoardDom(){
   const wrap = document.getElementById('boardWrap');
   const cellSize = Math.floor(BOARD_FRAME_PX / COLS);
@@ -755,12 +764,14 @@ function buildBoardDom(){
   wrap.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px) auto`;
   wrap.innerHTML = '';
 
-  for(let r=0;r<ROWS;r++){
+  for(let vr=0;vr<ROWS;vr++){
+    const r = boardFlipped ? (ROWS-1-vr) : vr;
     const rl = document.createElement('div');
     rl.className='rowlabel';
     rl.textContent = ROWS - r;
     wrap.appendChild(rl);
-    for(let c=0;c<COLS;c++){
+    for(let vc=0;vc<COLS;vc++){
+      const c = boardFlipped ? (COLS-1-vc) : vc;
       const sq = document.createElement('div');
       const isLight = (r+c)%2===0;
       sq.className = 'sq ' + (isLight?'light':'dark');
@@ -774,7 +785,8 @@ function buildBoardDom(){
   }
   const corner = document.createElement('div');
   wrap.appendChild(corner);
-  for(let c=0;c<COLS;c++){
+  for(let vc=0;vc<COLS;vc++){
+    const c = boardFlipped ? (COLS-1-vc) : vc;
     const cl = document.createElement('div');
     cl.className='collabel';
     cl.textContent = colLabel(c);
@@ -1022,6 +1034,7 @@ document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
 
 document.getElementById('resetBtn').onclick = resetGame;
 document.getElementById('undoBtn').onclick = undoMove;
+document.getElementById('flipBtn').onclick = flipBoard;
 document.getElementById('rulesBtn').onclick = openPieceModal;
 document.getElementById('piece-close').onclick = closePieceModal;
 document.getElementById('gameRulesBtn').onclick = openRulesModal;
