@@ -44,7 +44,7 @@ body {
 #board { display:grid; box-shadow:0 0 40px rgba(0,0,0,.8); }
 .cell {
   display:flex; align-items:center; justify-content:center; position:relative;
-  cursor:default; transition:background .1s;
+  cursor:default;
 }
 .cell.light { background:var(--cell-a); } .cell.dark { background:var(--cell-b); }
 .cell.forbidden { background:rgba(255,60,60,.12) !important; }
@@ -102,7 +102,7 @@ body {
 .leg-dot.threat { background:rgba(255,180,0,.4); border:1px solid #ffb400; }
 .leg-dot.forb { background:rgba(255,60,60,.2); border:1px solid #ff3c3c88; }
 
-button { font-family:var(--font-family); font-size:13px; background:var(--btn-bg); border:1px solid var(--btn-border); color:var(--accent); padding:8px 14px; cursor:pointer; border-radius:6px; transition:background .15s,border-color .15s; }
+button { font-family:var(--font-family); font-size:13px; background:var(--btn-bg); border:1px solid var(--btn-border); color:var(--accent); padding:8px 14px; cursor:pointer; border-radius:6px; }
 button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border); }
 
 .game-over-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100; align-items:center; justify-content:center; }
