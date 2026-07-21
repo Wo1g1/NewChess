@@ -73,6 +73,7 @@
   .panel h3 { font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
   #turn-display { font-size:15px; font-weight:600; color:var(--accent); text-align:center; }
   #status-msg { font-style:italic; font-size:.85rem; color:var(--text-dim); text-align:center; }
+  #ai-thinking { font-size:10px; color:var(--accent); min-height:14px; text-align:center; margin-top:6px; }
   #log-box{
     margin-top:10px;
     background:var(--log-bg); border:1px solid var(--log-border);
@@ -165,6 +166,24 @@
     </div>
     <button onclick="resetGame()">새 게임</button>
     <button onclick="undoMove()">되돌리기</button>
+    <div class="panel">
+      <h3>AI (3초 제한)</h3>
+      <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
+        <label style="display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="aiDepth" value="4"> 깊이4
+        </label>
+        <label style="display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="aiDepth" value="5" checked> 깊이5
+        </label>
+      </div>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:6px;">
+        <input type="checkbox" id="aiWhiteToggle"> 백 AI
+      </label>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+        <input type="checkbox" id="aiBlackToggle"> 흑 AI
+      </label>
+      <div id="ai-thinking"></div>
+    </div>
   </div>
 
   <div class="mid-col">
@@ -267,8 +286,8 @@ function initBoard() {
 // ── 행마 ──────────────────────────────────────────────────────────────────
 function inBounds(r,c) { const S=getBoardSize(); return r>=0&&r<S&&c>=0&&c<S; }
 
-function getMoves(r,c,onlyCaptures=false) {
-  const piece=board[r][c]; if(!piece) return [];
+function getMoves(r,c,onlyCaptures=false,b=board) {
+  const piece=b[r][c]; if(!piece) return [];
   const {type,color}=piece;
   const moves=[]; const enemy=color==='w'?'b':'w';
   const dir=color==='w'?-1:1;
@@ -278,35 +297,35 @@ function getMoves(r,c,onlyCaptures=false) {
     for(let i=1;i<=maxDist;i++){
       const nr=r+dr*i,nc=c+dc*i;
       if(!inBounds(nr,nc)) break;
-      if(board[nr][nc]){ if(board[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true}); break; }
+      if(b[nr][nc]){ if(b[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true}); break; }
       if(!onlyCaptures) moves.push({r:nr,c:nc,capture:false});
     }
   };
   const jump=(dr,dc)=>{
     const nr=r+dr,nc=c+dc;
     if(!inBounds(nr,nc)) return;
-    if(board[nr][nc]){ if(board[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true}); }
+    if(b[nr][nc]){ if(b[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true}); }
     else if(!onlyCaptures) moves.push({r:nr,c:nc,capture:false});
   };
 
   switch(type){
     case 'P':{
       const nr=r+dir;
-      if(!onlyCaptures&&inBounds(nr,c)&&!board[nr][c]){
+      if(!onlyCaptures&&inBounds(nr,c)&&!b[nr][c]){
         moves.push({r:nr,c,capture:false});
         // 확장 버전: 2칸 전진 (초기 위치에서만)
         if(currentVersion==='extended'){
           const startRank=color==='w'?6:1;
           const nr2=r+dir*2;
-          if(r===startRank&&inBounds(nr2,c)&&!board[nr2][c])
+          if(r===startRank&&inBounds(nr2,c)&&!b[nr2][c])
             moves.push({r:nr2,c,capture:false,doubleStep:true});
         }
       }
       [-1,1].forEach(dc=>{
         const nr2=r+dir,nc2=c+dc;
-        if(inBounds(nr2,nc2)&&board[nr2][nc2]?.color===enemy) moves.push({r:nr2,c:nc2,capture:true});
+        if(inBounds(nr2,nc2)&&b[nr2][nc2]?.color===enemy) moves.push({r:nr2,c:nc2,capture:true});
         // 앙파상 (확장 버전만)
-        if(currentVersion==='extended'&&enPassantTarget&&nr2===enPassantTarget.r&&nc2===enPassantTarget.c&&!board[nr2][nc2])
+        if(currentVersion==='extended'&&enPassantTarget&&nr2===enPassantTarget.r&&nc2===enPassantTarget.c&&!b[nr2][nc2])
           moves.push({r:nr2,c:nc2,capture:true,enPassant:true,capturedAt:{r:r,c:nc2}});
       });
       break;
@@ -319,7 +338,7 @@ function getMoves(r,c,onlyCaptures=false) {
     case 'N':
       [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
         const nr=r+dr,nc=c+dc; if(!inBounds(nr,nc)) return;
-        if(board[nr][nc]){if(board[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true});}
+        if(b[nr][nc]){if(b[nr][nc].color===enemy) moves.push({r:nr,c:nc,capture:true});}
         else if(!onlyCaptures) moves.push({r:nr,c:nc,capture:false});
       });
       break;
@@ -334,7 +353,7 @@ function getMoves(r,c,onlyCaptures=false) {
           for(let i=1;i<S;i++){
             const nr=r+dr*i,nc=c+dc*i;
             if(!inBounds(nr,nc)) break;
-            if(board[nr][nc]) break; // 아군/상대 모두 이동 불가, 캡처도 안 함
+            if(b[nr][nc]) break; // 아군/상대 모두 이동 불가, 캡처도 안 함
             moves.push({r:nr,c:nc,capture:false});
           }
         });
@@ -344,10 +363,10 @@ function getMoves(r,c,onlyCaptures=false) {
         for(let i=1;i<S;i++){
           const nr=r+dr*i,nc=c+dc*i;
           if(!inBounds(nr,nc)) break;
-          if(board[nr][nc]){
-            if(board[nr][nc].color===enemy){
+          if(b[nr][nc]){
+            if(b[nr][nc].color===enemy){
               const lr=nr+dr,lc=nc+dc;
-              if(inBounds(lr,lc)&&!board[lr][lc]) moves.push({r:lr,c:lc,capture:true,capturedAt:{r:nr,c:nc}});
+              if(inBounds(lr,lc)&&!b[lr][lc]) moves.push({r:lr,c:lc,capture:true,capturedAt:{r:nr,c:nc}});
             }
             break;
           }
@@ -359,10 +378,10 @@ function getMoves(r,c,onlyCaptures=false) {
         for(let i=1;i<S;i++){
           const nr=r+dr*i,nc=c+dc*i;
           if(!inBounds(nr,nc)) break;
-          if(board[nr][nc]){
-            if(board[nr][nc].color===enemy){
+          if(b[nr][nc]){
+            if(b[nr][nc].color===enemy){
               const lr=nr+dr,lc=nc+dc;
-              if(inBounds(lr,lc)&&!board[lr][lc]) moves.push({r:lr,c:lc,capture:true,capturedAt:{r:nr,c:nc}});
+              if(inBounds(lr,lc)&&!b[lr][lc]) moves.push({r:lr,c:lc,capture:true,capturedAt:{r:nr,c:nc}});
             }
             break;
           }
@@ -373,15 +392,15 @@ function getMoves(r,c,onlyCaptures=false) {
   return moves;
 }
 
-function isInCheck(color) {
+function isInCheck(color,b=board) {
   const S=getBoardSize(); let kr=-1,kc=-1;
   for(let r=0;r<S;r++) for(let c=0;c<S;c++)
-    if(board[r][c]?.type==='K'&&board[r][c]?.color===color){kr=r;kc=c;}
+    if(b[r][c]?.type==='K'&&b[r][c]?.color===color){kr=r;kc=c;}
   if(kr<0) return false;
   const enemy=color==='w'?'b':'w';
   for(let r=0;r<S;r++) for(let c=0;c<S;c++){
-    if(board[r][c]?.color!==enemy) continue;
-    const ms=getMoves(r,c,true);
+    if(b[r][c]?.color!==enemy) continue;
+    const ms=getMoves(r,c,true,b);
     for(const m of ms){
       // 포 캡처: 실제 잡히는 기물은 capturedAt
       if(m.capturedAt){
@@ -394,18 +413,18 @@ function isInCheck(color) {
   return false;
 }
 
-function getLegalMoves(r,c) {
-  const piece=board[r][c]; if(!piece) return [];
-  return getMoves(r,c).filter(mv=>{
-    const saved=board[mv.r][mv.c];
-    const movedPiece=getActualDemotion(piece,mv);
+function getLegalMoves(r,c,b=board) {
+  const piece=b[r][c]; if(!piece) return [];
+  return getMoves(r,c,false,b).filter(mv=>{
+    const saved=b[mv.r][mv.c];
+    const movedPiece=getActualDemotion(piece,mv,b);
     // 포 캡처: 실제 잡힌 기물은 capturedAt
     let savedAt=null;
-    if(mv.capturedAt){savedAt=board[mv.capturedAt.r][mv.capturedAt.c]; board[mv.capturedAt.r][mv.capturedAt.c]=null;}
-    board[r][c]=null; board[mv.r][mv.c]=movedPiece;
-    const check=isInCheck(piece.color);
-    board[r][c]=piece; board[mv.r][mv.c]=saved;
-    if(mv.capturedAt) board[mv.capturedAt.r][mv.capturedAt.c]=savedAt;
+    if(mv.capturedAt){savedAt=b[mv.capturedAt.r][mv.capturedAt.c]; b[mv.capturedAt.r][mv.capturedAt.c]=null;}
+    b[r][c]=null; b[mv.r][mv.c]=movedPiece;
+    const check=isInCheck(piece.color,b);
+    b[r][c]=piece; b[mv.r][mv.c]=saved;
+    if(mv.capturedAt) b[mv.capturedAt.r][mv.capturedAt.c]=savedAt;
     return !check;
   });
 }
@@ -417,10 +436,10 @@ function getDemotionMap() {
     return {Q:'Mann',R:'Wazir',N:'P',C:'FC',Mann:'Mann',Wazir:'Wazir',FC:'FC',K:'K'};
 }
 
-function getActualDemotion(piece,mv) {
+function getActualDemotion(piece,mv,b=board) {
   if(!mv.capture) return {...piece};
   // 포 캡처: capturedAt의 기물이 잡힌 대상
-  const capturedPiece = mv.capturedAt ? board[mv.capturedAt.r][mv.capturedAt.c] : board[mv.r][mv.c];
+  const capturedPiece = mv.capturedAt ? b[mv.capturedAt.r][mv.capturedAt.c] : b[mv.r][mv.c];
   if(!capturedPiece) return {...piece};
   if(capturedPiece.type==='P') return {...piece};
   const dm=getDemotionMap();
@@ -570,7 +589,7 @@ function handleClick(r,c){
   if(piece?.color===turn){selected={r,c};validMoves=getLegalMoves(r,c);renderBoard();}
 }
 
-function executeMove(fr,fc,mv){
+function executeMove(fr,fc,mv,autoPromote=null){
   const piece=board[fr][fc];
   const S=getBoardSize();
 
@@ -609,10 +628,14 @@ function executeMove(fr,fc,mv){
   }
 
   if(checkPromotion(mv.r,mv.c,movedPiece,fr,demoted)){
-    selected=null;validMoves=[];
-    pendingPromotion={r:mv.r,c:mv.c,piece:movedPiece,fr,fc,mv,demoted};
-    showPromotionModal(movedPiece.color);
-    renderBoard();return;
+    if(autoPromote){
+      board[mv.r][mv.c]={...movedPiece,type:autoPromote};
+    } else {
+      selected=null;validMoves=[];
+      pendingPromotion={r:mv.r,c:mv.c,piece:movedPiece,fr,fc,mv,demoted};
+      showPromotionModal(movedPiece.color);
+      renderBoard();return;
+    }
   }
 
   const files='abcdefgh'.slice(0,S);
@@ -624,6 +647,7 @@ function executeMove(fr,fc,mv){
   addMoveToLog(moveStr,demoted,inCheck);
   selected=null;validMoves=[];
   renderBoard();updateStatus();
+  maybeTriggerAI();
 }
 
 function showPromotionModal(color){
@@ -650,6 +674,7 @@ function showPromotionModal(color){
       const inCheck=isInCheck(turn);
       addMoveToLog(ms,pp.demoted,inCheck);
       renderBoard();updateStatus();
+      maybeTriggerAI();
     });
     container.appendChild(btn);
   });
@@ -669,11 +694,134 @@ function undoMove(){
   renderBoard();updateStatus();
 }
 
+// ── AI 엔진: 메인스레드 negamax + 알파베타, 고정 깊이 + 3초 데드라인 ───────────
+let aiEnabled = { w:false, b:false };
+let aiThinking = false;
+let SEARCH_DEPTH = 5;
+
+document.querySelectorAll('input[name="aiDepth"]').forEach(radio => {
+  radio.onchange = (e) => {
+    if(e.target.checked) SEARCH_DEPTH = parseInt(e.target.value);
+  };
+});
+document.getElementById('aiWhiteToggle').onchange = (e) => { aiEnabled.w = e.target.checked; maybeTriggerAI(); };
+document.getElementById('aiBlackToggle').onchange = (e) => { aiEnabled.b = e.target.checked; maybeTriggerAI(); };
+
+function maybeTriggerAI(){
+  if(gameOver || pendingPromotion || aiThinking) return;
+  if(aiEnabled[turn]){
+    aiThinking = true;
+    const turnLabel = turn==='w' ? '백' : '흑';
+    document.getElementById('ai-thinking').textContent = turnLabel + ' AI 계산 중...';
+    setTimeout(runAIMove, 50);
+  }
+}
+
+function runAIMove(){
+  aiThinking = false;
+  document.getElementById('ai-thinking').textContent = '';
+  if(gameOver || pendingPromotion) return;
+  const mv = findBestMove(board, turn, SEARCH_DEPTH);
+  if(!mv) return;
+  executeMove(mv.fr, mv.fc, mv, 'Q');
+}
+
+// 기물가치 (2배 스케일, 확정값) — 강급 후 타입(Mann/Wazir/FC)도 board에 실제로 반영되므로
+// 별도의 "강급 예측" 휴리스틱 없이 매 리프에서 현재 타입을 그대로 읽으면 된다.
+const PIECE_VALUES = { P:2, R:10, Q:12, N:6, C:8, Mann:8, Wazir:5, FC:3, K:1000 };
+
+function rootMovesSim(b, color){
+  const S = getBoardSize();
+  const moves = [];
+  for(let r=0;r<S;r++) for(let c=0;c<S;c++)
+    if(b[r][c]?.color===color)
+      for(const mv of getLegalMoves(r,c,b)) moves.push({fr:r,fc:c,...mv});
+  return moves;
+}
+
+function applyMoveSim(b, fr, fc, mv){
+  const nb = b.map(row=>row.map(cell=>cell?{...cell}:null));
+  const piece = nb[fr][fc];
+  const movedPiece = getActualDemotion(piece,mv,nb);
+  const demoted = movedPiece.type!==piece.type;
+  if(mv.capturedAt) nb[mv.capturedAt.r][mv.capturedAt.c]=null;
+  nb[fr][fc]=null;
+  nb[mv.r][mv.c]=movedPiece;
+  if(checkPromotion(mv.r,mv.c,movedPiece,fr,demoted)){
+    nb[mv.r][mv.c]={...movedPiece,type:'Q'};
+  }
+  return nb;
+}
+
+function evaluateMaterial(b){
+  const S = getBoardSize();
+  let score = 0;
+  for(let r=0;r<S;r++) for(let c=0;c<S;c++){
+    const p=b[r][c]; if(!p) continue;
+    score += (p.color==='w' ? 1 : -1) * PIECE_VALUES[p.type];
+  }
+  return score;
+}
+
+let searchStart = 0;
+const TIME_LIMIT = 3000; // 3초 (4개 게임 공통 제한)
+
+function negamax(b, depth, alpha, beta, color){
+  if(depth===0 || Date.now()-searchStart > TIME_LIMIT){
+    const m = evaluateMaterial(b);
+    return color==='w' ? m : -m;
+  }
+  const moves = rootMovesSim(b, color);
+  if(moves.length===0){
+    const m = evaluateMaterial(b);
+    return color==='w' ? m : -m;
+  }
+  moves.sort((a,c) => (c.capture?1:0) - (a.capture?1:0));
+
+  const opp = color==='w'?'b':'w';
+  let best = -Infinity;
+  for(const mv of moves){
+    const nb = applyMoveSim(b, mv.fr, mv.fc, mv);
+    const val = -negamax(nb, depth-1, -beta, -alpha, opp);
+    if(val > best) best = val;
+    if(best > alpha) alpha = best;
+    if(alpha >= beta) break;
+    if(Date.now()-searchStart > TIME_LIMIT) break;
+  }
+  return best;
+}
+
+function findBestMove(b, color, maxDepth){
+  const moves = rootMovesSim(b, color);
+  if(moves.length===0) return null;
+
+  searchStart = Date.now();
+
+  // 동점일 때 다양성을 위해 순서 섞기
+  for(let i=moves.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [moves[i],moves[j]]=[moves[j],moves[i]]; }
+  moves.sort((a,c) => (c.capture?1:0) - (a.capture?1:0));
+
+  const opp = color==='w'?'b':'w';
+  let alpha = -Infinity, beta = Infinity;
+  let bestMove = moves[0], bestVal = -Infinity;
+
+  for(const mv of moves){
+    if(Date.now()-searchStart > TIME_LIMIT) break;
+    const nb = applyMoveSim(b, mv.fr, mv.fc, mv);
+    const val = -negamax(nb, maxDepth-1, -beta, -alpha, opp);
+    if(val > bestVal){ bestVal = val; bestMove = mv; }
+    if(bestVal > alpha) alpha = bestVal;
+  }
+  return bestMove;
+}
+
 function resetGame(){
   initBoard();
   turn='w';selected=null;validMoves=[];pendingPromotion=null;
   moveCount=1;history=[];gameOver=false;
   capturedByWhite=[];capturedByBlack=[];enPassantTarget=null;
+  aiThinking=false;
+  document.getElementById('ai-thinking').textContent='';
   document.getElementById('log').innerHTML='';
   document.getElementById('status-msg').textContent='';
   renderBoard();updateStatus();
