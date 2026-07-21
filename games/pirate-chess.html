@@ -180,6 +180,21 @@ button:hover { background: var(--btn-accent-bg); }
   background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; width: auto;
 }
 #piece-close:hover { color: var(--accent); }
+
+#rules-modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:150; align-items:center; justify-content:center; }
+#rules-modal.show{ display:flex; }
+#rules-modal-box{ background:var(--modal-bg); border:2px solid var(--modal-border); border-radius:10px; padding:20px 24px; width:340px; max-width:90vw; position:relative; font-family:var(--font-family); }
+#rules-modal-box h3{ margin:0 0 16px; text-align:center; color:var(--accent); font-size:15px; letter-spacing:.04em; }
+.rule-section{ margin-bottom:14px; }
+.rule-section:last-child{ margin-bottom:0; }
+.rule-section .rule-label{ font-size:11px; color:var(--accent); font-weight:600; margin-bottom:6px; letter-spacing:.02em; }
+.rule-section ul{ margin:0; padding-left:18px; font-size:12.5px; color:var(--text); line-height:1.8; }
+#rules-close{
+  position:absolute; top:10px; right:14px;
+  background:none; border:none; color:var(--text-dim); font-size:18px; cursor:pointer; width:auto;
+}
+#rules-close:hover{ color:var(--accent); }
+
 #promotion-box {
   background: var(--modal-bg); border: 2px solid var(--modal-border);
   padding: 20px; border-radius: 8px; text-align: center;
@@ -245,14 +260,29 @@ button:hover { background: var(--btn-accent-bg); }
       <h3>백에게 잡힌 기물</h3>
       <div class="captured-row" id="capBlack"></div>
     </div>
-    <div id="rules-box" class="panel">
-      <h3>규칙</h3>
-      <div style="color:var(--accent); margin-bottom:4px; font-size:12px;">승리 조건</div>
-      <div style="font-size:11px; color:var(--text-dim); line-height:1.6;">
-        • 체크메이트<br>• 선장이 육지에서 2턴 연속 체크 없이 생존
-      </div>
-    </div>
+    <button onclick="openRulesModal()">규칙 보기</button>
     <button onclick="openPieceModal()">기물 행마 보기</button>
+  </div>
+</div>
+<div id="rules-modal">
+  <div id="rules-modal-box">
+    <button id="rules-close" onclick="closeRulesModal()">✕</button>
+    <h3>규칙 안내</h3>
+    <div class="rule-section">
+      <div class="rule-label">승리 조건</div>
+      <ul>
+        <li>체크메이트</li>
+        <li>선장이 육지에서 2턴 연속 체크 없이 생존</li>
+      </ul>
+    </div>
+    <div class="rule-section">
+      <div class="rule-label">지형 구분</div>
+      <ul>
+        <li>보드는 바다 타일과 육지 타일로 나뉩니다.</li>
+        <li>기물이 위치한 타일에 따라 행마가 달라집니다.</li>
+        <li>타일별 기물 행마 변화는 기물 행마 보기를 참고하세요.</li>
+      </ul>
+    </div>
   </div>
 </div>
 <div id="piece-modal">
@@ -557,6 +587,15 @@ function openPieceModal() {
 }
 function closePieceModal() {
   document.getElementById('piece-modal').classList.remove('show');
+  notifyModal(false);
+}
+
+function openRulesModal() {
+  document.getElementById('rules-modal').classList.add('show');
+  notifyModal(true);
+}
+function closeRulesModal() {
+  document.getElementById('rules-modal').classList.remove('show');
   notifyModal(false);
 }
 
