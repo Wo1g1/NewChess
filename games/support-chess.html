@@ -1020,7 +1020,7 @@ function makeGrid(size){ return Array.from({length:size}, () => Array(size).fill
 
 const PIECE_MODAL_DATA = {
   K: {
-    name: '킹 (K)', icon:'♔',
+    name: '킹', icon:'♔',
     boards: [{
       label:'만 (8방향 1칸)',
       grid: (() => {
@@ -1033,7 +1033,7 @@ const PIECE_MODAL_DATA = {
     }]
   },
   N: {
-    name: '나이트 (켄타우로스)', icon:'♘',
+    name: '나이트', icon:'♘',
     boards: [{
       label:'만 이동 + 나이트 캡처',
       grid: (() => {
@@ -1047,7 +1047,7 @@ const PIECE_MODAL_DATA = {
     }]
   },
   R: {
-    name: '룩 (렌서)', icon:'♖',
+    name: '룩', icon:'♖',
     boards: [{
       label:'나이트 이동 + 룩 캡처',
       grid: (() => {
@@ -1061,7 +1061,7 @@ const PIECE_MODAL_DATA = {
     }]
   },
   Q: {
-    name: '퀸 (팔콘)', icon:'♕',
+    name: '퀸', icon:'♕',
     boards: [{
       label:'퀸 이동 + 만 캡처',
       grid: (() => {
@@ -1071,11 +1071,11 @@ const PIECE_MODAL_DATA = {
           if(3-i>=0){ g[3-i][3-i]='mv'; g[3-i][3+i]='mv'; }
           if(3+i<7){ g[3+i][3-i]='mv'; g[3+i][3+i]='mv'; }
         }
-        for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='cap';
+        for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='mv-cap';
         return g;
       })(),
-      desc:'직선+대각 8방향 무제한: 이동 전용. 8방향 1칸: 캡처 전용.',
-      legends:[['mv','#4a7a10','이동 전용'],['cap','#7a2020','캡처 전용']]
+      desc:'직선+대각 8방향 무제한: 이동 전용(캡처 불가). 8방향 1칸: 이동+캡처.',
+      legends:[['mv','#4a7a10','이동 전용'],['mv-cap','#7a5500','이동+캡처']]
     }]
   },
   B: {
@@ -1179,7 +1179,7 @@ const PIECE_MODAL_DATA = {
   }
 };
 
-const PIECE_ORDER = ['P','N','R','B','Q','K'];
+const PIECE_ORDER = ['P','B','N','R','Q','K'];
 let activePieceTab = 'P';
 
 function openPieceModal(){
