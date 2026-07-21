@@ -40,21 +40,23 @@
   }
   h1{font-size:18px; font-weight:500; line-height:44px; margin:0 0 16px;}
   #status{
-    font-size:15px;
-    font-weight:600;
-    color:var(--accent);
     padding:0;
     height:52px;
     display:flex;
+    flex-direction:column;
     align-items:center;
     justify-content:center;
+    gap:2px;
     border-radius:8px;
     border:1px solid var(--border);
     background:var(--panel-bg);
     box-sizing:border-box;
+    text-align:center;
   }
-  #status.check{color:#ffb84d;}
-  #status.over{color:#ff6b6b; font-weight:600;}
+  #status-main{font-size:15px;font-weight:600;color:var(--accent);}
+  #status-sub{font-size:11px;color:var(--text-dim);}
+  #status.check #status-main{color:#ffb84d;}
+  #status.over #status-main{color:#ff6b6b; font-weight:600;}
   /* 좌/보드/우 3컬럼 공통 레이아웃 (4개 게임 공용 구조) */
   .row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
   .col-left, .col-right{ display:flex; flex-direction:column; gap:10px; width:170px; flex-shrink:0; }
@@ -217,7 +219,10 @@
 
 <div class="row3">
   <div class="col-left">
-    <div id="status">백 차례</div>
+    <div id="status">
+      <div id="status-main">백 차례</div>
+      <div id="status-sub"></div>
+    </div>
     <div class="panel">
       <h3>흑에게 잡힌 기물</h3>
       <div class="captured-row" id="capWhite"></div>
@@ -710,13 +715,14 @@ function renderLog(){
 }
 
 const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수
+const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
 
 function buildBoardDom(){
   const wrap = document.getElementById('boardWrap');
   const cellSize = Math.floor(BOARD_FRAME_PX / COLS);
   const labelSize = 20;
   wrap.style.gridTemplateColumns = `${labelSize}px repeat(${COLS}, ${cellSize}px)`;
-  wrap.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px) ${labelSize}px`;
+  wrap.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px) auto`;
   wrap.innerHTML = '';
 
   for(let r=0;r<ROWS;r++){
@@ -730,7 +736,7 @@ function buildBoardDom(){
       sq.className = 'sq ' + (isLight?'light':'dark');
       sq.style.width = cellSize+'px';
       sq.style.height = cellSize+'px';
-      sq.style.fontSize = Math.floor(cellSize*0.7)+'px';
+      sq.style.fontSize = Math.floor(cellSize*PIECE_SIZE_RATIO)+'px';
       sq.dataset.r = r; sq.dataset.c = c;
       sq.onclick = () => onSquareClick(r,c);
       wrap.appendChild(sq);
@@ -779,7 +785,7 @@ function render(){
   });
 
   const statusEl = document.getElementById('status');
-  statusEl.textContent = statusMessage;
+  document.getElementById('status-main').textContent = statusMessage;
   statusEl.className = gameOver ? 'over' : (checkColor ? 'check' : '');
 
   document.getElementById('capWhite').textContent = capturedByBlack.map(p => GLYPH['w'][p]).join(' ');
