@@ -67,6 +67,8 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; position: relative; user-select: none;
 }
+.cell.piece-white{ color:#ffffff; text-shadow:0 0 1px #000, 0 0 2px #000; }
+.cell.piece-black{ color:#000000; text-shadow:0 0 1px rgba(255,255,255,.35); }
 .sea-light  { background: var(--sea-l); }
 .sea-dark   { background: var(--sea-d); }
 .land-light { background: var(--land-l); }
@@ -290,7 +292,7 @@ function cellClass(col, row) {
 }
 
 const GLYPHS = {
-  W: { king:'♔', queen:'♕', rook:'♖', bishop:'♗', knight:'♘', pawn:'♙', cannon:'◎' },
+  W: { king:'♚', queen:'♛', rook:'♜', bishop:'♝', knight:'♞', pawn:'♟', cannon:'◎' },
   B: { king:'♚', queen:'♛', rook:'♜', bishop:'♝', knight:'♞', pawn:'♟', cannon:'◉' }
 };
 
@@ -1091,7 +1093,10 @@ function render() {
       cell.style.fontSize = Math.floor((BOARD_FRAME_PX/10)*PIECE_SIZE_RATIO)+'px';
       cell.onclick = () => handleClick(c, r);
       const piece = board[r][c];
-      if(piece) cell.textContent = GLYPHS[piece.color][piece.type];
+      if(piece){
+        cell.textContent = GLYPHS[piece.color][piece.type];
+        cell.classList.add(piece.color === 'W' ? 'piece-white' : 'piece-black');
+      }
       boardEl.appendChild(cell);
     }
   }
