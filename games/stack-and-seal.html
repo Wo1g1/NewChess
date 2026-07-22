@@ -28,11 +28,13 @@ html[data-theme="brown"]{
   --cell-a:#2c1f12; --cell-b:#22170d;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html{ overflow:hidden; }
 body {
   background: var(--bg); color: var(--text); font-family: var(--font-family);
   line-height: 1.2;
   min-height: 100vh; display: flex; flex-direction: column; align-items: center;
   padding: 20px;
+  overflow:hidden;
 }
 /* 좌/보드/우 3컬럼 공통 레이아웃 (4개 게임 공용 구조) */
 .row3{ display:flex; gap:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
