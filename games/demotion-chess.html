@@ -33,12 +33,14 @@
     --light:#eeeed2; --dark:#769656;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html{ overflow:hidden; }
   body {
     background: var(--bg);
     background-image: none;
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
     font-family: var(--font-body); line-height: 1.2; color: var(--text); padding: 20px;
+    overflow:hidden;
   }
   h1 { font-family:var(--font-heading); font-size:2rem; font-weight:900; letter-spacing:.15em; color:var(--accent); line-height:44px; margin:0 0 16px; }
   html[data-theme="brown"] h1{ text-shadow:0 0 30px rgba(201,168,76,.4); }
