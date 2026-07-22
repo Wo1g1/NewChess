@@ -213,6 +213,20 @@ button:hover { background: var(--btn-accent-bg); }
   background: var(--btn-bg); border: 1px solid var(--border); cursor: pointer; border-radius: 5px;
 }
 .promo-btn:hover { background: var(--btn-accent-bg); border-color: var(--accent-border); }
+
+/* ===== 모바일 레이아웃 (좁은 화면에서 순서 재배치) ===== */
+@media (max-width: 700px) {
+  .row3{ gap:8px; }
+  .col-left, .mid-col, .col-right{ display:contents; }
+  .col-right > [aria-hidden="true"]{ display:none; }
+  #turn-box{ order:1; flex-basis:100%; }
+  #boardWrap{ order:2; flex-basis:100%; }
+  #log-box{ order:3; flex-basis:100%; width:auto; }
+  .panel:has(#capWhite), .panel:has(#capBlack){ order:4; flex-basis:calc(50% - 4px); }
+  #resetBtn, #undoBtn, #flipBtn{ order:5; flex-basis:calc(33.333% - 5.333px); }
+  #gameRulesBtn, #rulesBtn{ order:6; flex-basis:calc(50% - 4px); }
+  #ai-box{ order:7; flex-basis:100%; }
+}
 </style>
 </head>
 <body>
@@ -226,9 +240,9 @@ button:hover { background: var(--btn-accent-bg); }
       <h3>흑에게 잡힌 기물</h3>
       <div class="captured-row" id="capWhite"></div>
     </div>
-    <button onclick="resetGame()">새 게임</button>
-    <button onclick="undoMove()">되돌리기</button>
-    <button onclick="flipBoard()">보드 뒤집기</button>
+    <button id="resetBtn" onclick="resetGame()">새 게임</button>
+    <button id="undoBtn" onclick="undoMove()">되돌리기</button>
+    <button id="flipBtn" onclick="flipBoard()">보드 뒤집기</button>
     <div id="ai-box" class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -250,7 +264,7 @@ button:hover { background: var(--btn-accent-bg); }
   </div>
 
   <div class="mid-col">
-    <div style="display:flex;align-items:flex-start;">
+    <div id="boardWrap" style="display:flex;align-items:flex-start;">
       <div id="rank-labels"></div>
       <div id="board-col">
         <div id="board"></div>
@@ -266,8 +280,8 @@ button:hover { background: var(--btn-accent-bg); }
       <h3>백에게 잡힌 기물</h3>
       <div class="captured-row" id="capBlack"></div>
     </div>
-    <button onclick="openRulesModal()">규칙 보기</button>
-    <button onclick="openPieceModal()">기물 행마 보기</button>
+    <button id="gameRulesBtn" onclick="openRulesModal()">규칙 보기</button>
+    <button id="rulesBtn" onclick="openPieceModal()">기물 행마 보기</button>
   </div>
 </div>
 <div id="rules-modal" onclick="if(event.target===this) closeRulesModal()">
@@ -307,8 +321,12 @@ button:hover { background: var(--btn-accent-bg); }
 </div>
 
 <script>
-const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수 (10x10 고정 보드라 CSS에서 48px 셀로 직접 반영)
+const BOARD_FRAME_PX_MAX = 480; // 4개 게임 공통 상수 (데스크톱 최대값)
 const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
+function getBoardFramePx(){
+  const available = window.innerWidth - 56; // 좌우 여백 + 랭크 라벨 폭 고려
+  return Math.max(180, Math.min(BOARD_FRAME_PX_MAX, available));
+}
 const FILES = ['a','b','c','d','e','f','g','h','i','j'];
 
 // 내부 배열: board[row][col], row 0 = rank 1 (백 후방), row 9 = rank 10 (흑 후방)
@@ -925,19 +943,25 @@ function flipBoard(){
 }
 
 function buildRankLabels() {
+  const cellSize = Math.floor(getBoardFramePx()/10);
   const el = document.getElementById('rank-labels');
   el.innerHTML = '';
+  el.style.height = (cellSize*10)+'px';
   for(let vr=0;vr<10;vr++){
     const r = boardFlipped ? vr : (9-vr);
     const s = document.createElement('span');
     s.textContent = r+1;
+    s.style.height = cellSize+'px';
+    s.style.lineHeight = cellSize+'px';
     el.appendChild(s);
   }
 }
 
 function buildFileLabels() {
+  const cellSize = Math.floor(getBoardFramePx()/10);
   const el = document.getElementById('file-labels');
   el.innerHTML = '';
+  el.style.gridTemplateColumns = `repeat(10, ${cellSize}px)`;
   for(let vc=0;vc<10;vc++){
     const c = boardFlipped ? (9-vc) : vc;
     const s = document.createElement('span');
@@ -945,6 +969,12 @@ function buildFileLabels() {
     el.appendChild(s);
   }
 }
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { buildRankLabels(); buildFileLabels(); render(); }, 150);
+});
 
 function label(col, row) { return FILES[col] + (row+1); }
 function setStatus(msg) { document.getElementById('status-bar').textContent = msg; }
@@ -973,7 +1003,10 @@ function renderLog() {
 }
 
 function render() {
+  const cellSize = Math.floor(getBoardFramePx()/10);
   const boardEl = document.getElementById('board');
+  boardEl.style.gridTemplateColumns = `repeat(10, ${cellSize}px)`;
+  boardEl.style.gridTemplateRows = `repeat(10, ${cellSize}px)`;
   boardEl.innerHTML = '';
   // 렌더: 뒤집기 상태에 따라 rank10/rank1 중 어느 쪽이 맨 위로 오는지 결정
   for(let vr=0; vr<10; vr++){
@@ -984,7 +1017,9 @@ function render() {
       cell.className = 'cell ' + cellClass(c, r);
       cell.dataset.col = c;
       cell.dataset.row = r;
-      cell.style.fontSize = Math.floor((BOARD_FRAME_PX/10)*PIECE_SIZE_RATIO)+'px';
+      cell.style.width = cellSize+'px';
+      cell.style.height = cellSize+'px';
+      cell.style.fontSize = Math.floor(cellSize*PIECE_SIZE_RATIO)+'px';
       cell.onclick = () => handleClick(c, r);
       const piece = board[r][c];
       if(piece){

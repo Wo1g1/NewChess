@@ -163,12 +163,26 @@
     background:none; border:none; color:var(--text-dim); font-size:1.1rem; cursor:pointer;
   }
   #rules-close:hover{ color:var(--accent); }
+
+  /* ===== 모바일 레이아웃 (좁은 화면에서 순서 재배치) ===== */
+  @media (max-width: 700px) {
+    .row3{ gap:8px; }
+    .col-left, .mid-col, .col-right{ display:contents; }
+    #status{ order:1; flex-basis:100%; }
+    #boardWrap{ order:2; flex-basis:100%; }
+    #log-box{ order:3; flex-basis:100%; width:auto; }
+    .version-toggle{ order:4; flex-basis:100%; }
+    .panel:has(#captured-white), .panel:has(#captured-black){ order:5; flex-basis:calc(50% - 4px); }
+    #resetBtn, #undoBtn, #flipBtn{ order:6; flex-basis:calc(33.333% - 5.333px); }
+    #gameRulesBtn, #rulesBtn{ order:7; flex-basis:calc(50% - 4px); }
+    .panel:has(#ai-thinking){ order:8; flex-basis:100%; }
+  }
 </style>
 </head>
 <body>
 <div class="row3">
   <div class="col-left">
-    <div class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+    <div id="status" class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
       <div id="turn-display">백 차례</div>
       <div id="status-msg"></div>
     </div>
@@ -176,9 +190,9 @@
       <h3>흑에게 잡힌 기물</h3>
       <div class="captured-row" id="captured-white"></div>
     </div>
-    <button onclick="resetGame()">새 게임</button>
-    <button onclick="undoMove()">되돌리기</button>
-    <button onclick="flipBoard()">보드 뒤집기</button>
+    <button id="resetBtn" onclick="resetGame()">새 게임</button>
+    <button id="undoBtn" onclick="undoMove()">되돌리기</button>
+    <button id="flipBtn" onclick="flipBoard()">보드 뒤집기</button>
     <div class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -200,7 +214,7 @@
   </div>
 
   <div class="mid-col">
-    <div style="display:flex;align-items:flex-start;">
+    <div id="boardWrap" style="display:flex;align-items:flex-start;">
       <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
       <div>
         <div id="board"></div>
@@ -266,7 +280,7 @@
 <script>
 // ── 버전 관리 ─────────────────────────────────────────────────────────────
 let currentVersion = 'basic'; // 'basic' | 'extended'
-const CELL_SIZE = { basic: 80, extended: 60 };
+const CELL_SIZE_MAX = { basic: 80, extended: 60 };
 const BOARD_SIZE = { basic: 6, extended: 8 };
 const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
 
@@ -279,7 +293,16 @@ function switchVersion(v) {
 }
 
 function getBoardSize() { return BOARD_SIZE[currentVersion]; }
-function getCellSize() { return CELL_SIZE[currentVersion]; }
+function getCellSize() {
+  const available = window.innerWidth - 40;
+  return Math.max(28, Math.min(CELL_SIZE_MAX[currentVersion], Math.floor(available / getBoardSize())));
+}
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { renderBoard(); }, 150);
+});
 
 // ── 상태 ──────────────────────────────────────────────────────────────────
 let board = [];
