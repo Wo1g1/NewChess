@@ -270,7 +270,7 @@ button:hover { background: var(--btn-accent-bg); }
     <button onclick="openPieceModal()">기물 행마 보기</button>
   </div>
 </div>
-<div id="rules-modal">
+<div id="rules-modal" onclick="if(event.target===this) closeRulesModal()">
   <div id="rules-modal-box">
     <button id="rules-close" onclick="closeRulesModal()">✕</button>
     <h3>규칙 안내</h3>
@@ -291,7 +291,7 @@ button:hover { background: var(--btn-accent-bg); }
     </div>
   </div>
 </div>
-<div id="piece-modal">
+<div id="piece-modal" onclick="if(event.target===this) closePieceModal()">
   <div id="piece-modal-box">
     <button id="piece-close" onclick="closePieceModal()">✕</button>
     <h3>기물 행마 안내</h3>
@@ -1049,6 +1049,7 @@ function handleClick(col, row) {
     const moves = getLegalMoves(selected.col, selected.row, board, turn);
     const mv = moves.find(m => m.col===col && m.row===row);
     if(mv){ doMove(selected.col, selected.row, col, row); selected=null; return; }
+    if(selected.col===col && selected.row===row){ selected=null; render(); return; }
     selected = null;
     if(piece && piece.color===turn) selected = {col, row};
     render(); return;
