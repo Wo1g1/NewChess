@@ -102,9 +102,8 @@
   }
   #gameFrame {
     width: 100%;
-    flex: 1;
     border: none;
-    min-height: 80vh;
+    min-height: 300px;
     background: var(--bg);
   }
   #placeholder {
@@ -113,7 +112,12 @@
     font-size: 1rem;
   }
   @media (max-width: 480px) {
-    header h1 { font-size: 1.05rem; padding-right: 128px; }
+    header h1 { font-size: 1rem; }
+    #theme-toggle { width: 88px; height: 26px; }
+    #theme-toggle button { font-size: .58rem; }
+    #theme-toggle button[data-theme-btn="simple"] { padding-left: 6px; }
+    #theme-toggle button[data-theme-btn="brown"] { padding-right: 6px; }
+    nav button { padding: 7px 10px; font-size: .8rem; }
   }
 </style>
 </head>
@@ -183,7 +187,15 @@ window.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'newchess-modal') {
     hubDim.style.display = e.data.open ? 'block' : 'none';
   }
+  if (e.data && e.data.type === 'newchess-height') {
+    frame.style.height = e.data.height + 'px';
+  }
 });
+
+// 어둡게 처리된 헤더 영역을 클릭하면 iframe 안의 열린 모달을 닫도록 요청
+hubDim.onclick = () => {
+  frame.contentWindow.postMessage({ type: 'newchess-close-modal' }, '*');
+};
 </script>
 </body>
 </html>

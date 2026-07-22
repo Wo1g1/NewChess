@@ -1425,6 +1425,22 @@ function notifyModal(open){
   try{ window.parent.postMessage({type:'newchess-modal', open}, '*'); }catch(e){}
 }
 
+// ===== 허브에 실제 콘텐츠 높이 보고 (iframe 자체 스크롤 방지) =====
+function reportHeight(){
+  try{ window.parent.postMessage({type:'newchess-height', height: document.documentElement.scrollHeight}, '*'); }catch(e){}
+}
+new ResizeObserver(reportHeight).observe(document.body);
+window.addEventListener('load', reportHeight);
+reportHeight();
+
+// 허브의 어두운 배경(hub-dim) 클릭 시 열려있는 모달 닫기
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'newchess-close-modal') {
+    closeRulesModal();
+    closePieceModal();
+  }
+});
+
 // ===== 전역 테마 (심플/브라운) — 토글은 허브에만 있고, 여기서는 반영만 =====
 const THEME_KEY = 'newchess-theme';
 function applyTheme(t){
