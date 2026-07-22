@@ -759,6 +759,7 @@ function closeRulesModal(){
 }
 document.getElementById('rulesBtn').onclick = openRulesModal;
 document.getElementById('rules-close').onclick = closeRulesModal;
+document.getElementById('rules-modal').addEventListener('click', (e) => { if(e.target === e.currentTarget) closeRulesModal(); });
 
 // 모달이 열리고 닫힐 때 허브 상단(헤더/네비)도 함께 어둡게 처리하도록 알림
 function notifyModal(open){

@@ -861,6 +861,12 @@ function onSquareClick(r,c){
       makeMove(selected, [r,c]);
       return;
     }
+    if(selected[0]===r && selected[1]===c){
+      selected = null;
+      legalDestinations = [];
+      render();
+      return;
+    }
     if(piece && piece.color===turn){
       selectPiece(r,c);
       return;
@@ -1056,6 +1062,8 @@ document.getElementById('rulesBtn').onclick = openPieceModal;
 document.getElementById('piece-close').onclick = closePieceModal;
 document.getElementById('gameRulesBtn').onclick = openRulesModal;
 document.getElementById('rules-close').onclick = closeRulesModal;
+document.getElementById('piece-modal').addEventListener('click', (e) => { if(e.target === e.currentTarget) closePieceModal(); });
+document.getElementById('rules-modal').addEventListener('click', (e) => { if(e.target === e.currentTarget) closeRulesModal(); });
 
 function openRulesModal(){
   document.getElementById('rules-modal').classList.add('show');
