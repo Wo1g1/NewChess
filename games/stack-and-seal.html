@@ -148,13 +148,27 @@ button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border
   background:none; border:none; color:var(--text-dim); font-size:1.1rem; cursor:pointer;
 }
 #rules-close:hover{ color:var(--accent); }
+
+/* ===== 모바일 레이아웃 (좁은 화면에서 순서 재배치) ===== */
+@media (max-width: 700px) {
+  .row3{ gap:8px; }
+  .col-left, .mid-col, .col-right{ display:contents; }
+  .col-right > [aria-hidden="true"]{ display:none; }
+  #status{ order:1; flex-basis:100%; }
+  #boardWrap{ order:2; flex-basis:100%; }
+  #log-box{ order:3; flex-basis:100%; width:auto; }
+  .panel:has(#blackMoves){ order:4; flex-basis:100%; }
+  #rules-box{ order:5; flex-basis:100%; }
+  #resetBtn, #undoBtn, #rulesBtn{ order:6; flex-basis:calc(33.333% - 5.333px); }
+  .panel:has(#ai-thinking){ order:7; flex-basis:100%; }
+}
 </style>
 </head>
 <body>
 
 <div class="row3">
   <div class="col-left">
-    <div class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+    <div id="status" class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
       <div id="turn-display">흑 차례</div>
       <div id="status-msg"></div>
     </div>
@@ -164,8 +178,8 @@ button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border
       <div class="score-row"><span>백 가능 수</span><span class="score-val" id="whiteMoves">-</span></div>
       <div class="score-row"><span>위협받는 돌</span><span class="score-val" id="threatened">-</span></div>
     </div>
-    <button onclick="resetGame()">새 게임</button>
-    <button onclick="undoMove()">되돌리기</button>
+    <button id="resetBtn" onclick="resetGame()">새 게임</button>
+    <button id="undoBtn" onclick="undoMove()">되돌리기</button>
     <div class="panel">
       <h3>AI (3초 제한)</h3>
       <div style="display:flex; align-items:center; gap:10px; font-size:13px; margin-bottom:8px;">
@@ -187,7 +201,7 @@ button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border
   </div>
 
   <div class="mid-col">
-    <div style="display:flex;align-items:flex-start;">
+    <div id="boardWrap" style="display:flex;align-items:flex-start;">
       <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
       <div>
         <div id="board"></div>
@@ -227,9 +241,19 @@ button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border
 </div>
 
 <script>
-const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수
+const BOARD_FRAME_PX_MAX = 480; // 4개 게임 공통 상수 (데스크톱 최대값)
 const SIZE = 8;
-const CELL = BOARD_FRAME_PX / SIZE; // 60px
+function getCell(){
+  const available = window.innerWidth - 40;
+  return Math.max(28, Math.min(Math.floor(BOARD_FRAME_PX_MAX/SIZE), Math.floor(available/SIZE)));
+}
+let CELL = getCell();
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { CELL = getCell(); render(); }, 150);
+});
 
 // board[r][f]: null | {color:'b'|'w', layer:1|2}
 let board = [];

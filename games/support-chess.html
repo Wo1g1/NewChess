@@ -233,6 +233,21 @@
     background:none; border:none; color:var(--text-dim); font-size:18px; cursor:pointer; width:auto;
   }
   #rules-close:hover{ color:var(--accent); }
+
+  /* ===== 모바일 레이아웃 (좁은 화면에서 순서 재배치) ===== */
+  @media (max-width: 700px) {
+    .row3{ gap:8px; }
+    .col-left, .mid-col, .col-right{ display:contents; }
+    .panel, #status, #resetBtn, #undoBtn, #flipBtn, #gameRulesBtn, #rulesBtn{ box-sizing:border-box; }
+    .col-right > [aria-hidden="true"]{ display:none; }
+    #status{ order:1; flex-basis:100%; }
+    #boardWrap{ order:2; flex-basis:100%; }
+    #log-box{ order:3; flex-basis:100%; width:auto; }
+    .panel:has(#capWhite), .panel:has(#capBlack){ order:4; flex-basis:calc(50% - 4px); }
+    #resetBtn, #undoBtn, #flipBtn{ order:5; flex-basis:calc(33.333% - 5.333px); }
+    #gameRulesBtn, #rulesBtn{ order:6; flex-basis:calc(50% - 4px); }
+    .panel:has(#ai-thinking){ order:7; flex-basis:100%; }
+  }
 </style>
 </head>
 <body>
@@ -751,8 +766,12 @@ function renderLog(){
   el.textContent = moveLog.map(m => m.n + '.' + (m.w||'...') + (m.b ? ' '+m.b : '')).join('  ');
 }
 
-const BOARD_FRAME_PX = 480; // 4개 게임 공통 상수
+const BOARD_FRAME_PX_MAX = 480; // 4개 게임 공통 상수 (데스크톱 최대값)
 const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
+function getBoardFramePx(){
+  const available = window.innerWidth - 56; // 좌우 여백 + 랭크 라벨 폭 고려
+  return Math.max(180, Math.min(BOARD_FRAME_PX_MAX, available));
+}
 
 let boardFlipped = false;
 
@@ -762,9 +781,15 @@ function flipBoard(){
   render();
 }
 
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { buildBoardDom(); render(); }, 150);
+});
+
 function buildBoardDom(){
   const wrap = document.getElementById('boardWrap');
-  const cellSize = Math.floor(BOARD_FRAME_PX / COLS);
+  const cellSize = Math.floor(getBoardFramePx() / COLS);
   const labelSize = 20;
   wrap.style.gridTemplateColumns = `${labelSize}px repeat(${COLS}, ${cellSize}px)`;
   wrap.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px) auto`;
