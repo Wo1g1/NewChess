@@ -79,14 +79,17 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 .land-light { background: var(--land-l); }
 .land-dark  { background: var(--land-d); }
 
-.cell.selected    { background: #9a8010 !important; }
-.cell.valid-move  { background: #6a6010 !important; }
+.cell.selected { outline: 3px solid #f2c744; outline-offset: -3px; }
 .cell.valid-move::after {
   content: ''; position: absolute;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: rgba(255,220,50,0.45); pointer-events: none;
+  width: 28%; height: 28%; border-radius: 50%;
+  background: rgba(225,225,225,.8); pointer-events: none;
 }
-.cell.valid-capture { background: #7a1e1e !important; }
+.cell.valid-capture::after {
+  content: ''; position: absolute;
+  width: 78%; height: 78%; border-radius: 50%;
+  border: 4px solid rgba(220,50,50,.8); box-sizing: border-box; pointer-events: none;
+}
 .cell.check-cell    { background: #9a1010 !important; }
 
 #file-labels { display: grid; grid-template-columns: repeat(10, 48px); margin-top: 0; }
