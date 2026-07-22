@@ -170,7 +170,7 @@
   @media (max-width: 700px) {
     .row3{ gap:8px; }
     .col-left, .mid-col, .col-right{ display:contents; }
-    #status{ order:1; flex-basis:100%; }
+    #status{ order:1; flex-basis:100%; height:auto !important; padding:8px 0 !important; }
     #boardWrap{ order:2; flex-basis:100%; }
     #log-box{ order:3; flex-basis:100%; width:auto; }
     .version-toggle{ order:4; flex-basis:100%; }
@@ -216,9 +216,9 @@
   </div>
 
   <div class="mid-col">
-    <div id="boardWrap" style="display:flex;align-items:flex-start;justify-content:center;">
-      <div id="rank-labels" style="display:flex;flex-direction:column;"></div>
-      <div>
+    <div id="boardWrap" style="display:flex;justify-content:center;">
+      <div id="board-col" style="position:relative;">
+        <div id="rank-labels" style="display:flex;flex-direction:column;position:absolute;right:100%;top:0;"></div>
         <div id="board"></div>
         <div class="coords-row" id="file-labels"></div>
       </div>

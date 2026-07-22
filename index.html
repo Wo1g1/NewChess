@@ -117,7 +117,11 @@
     #theme-toggle button { font-size: .58rem; }
     #theme-toggle button[data-theme-btn="simple"] { padding-left: 6px; }
     #theme-toggle button[data-theme-btn="brown"] { padding-right: 6px; }
-    nav button { padding: 7px 10px; font-size: .8rem; }
+    nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    nav button {
+      padding: 6px 2px; font-size: .62rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
   }
 </style>
 </head>
