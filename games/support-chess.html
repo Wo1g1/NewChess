@@ -67,6 +67,7 @@
   #boardWrap{
     display:grid;
     justify-content:center;
+    margin-bottom:20px;
   }
   .sq{
     display:flex;
@@ -243,7 +244,7 @@
     .col-left, .mid-col, .col-right{ display:contents; }
     .panel, #status, #resetBtn, #undoBtn, #flipBtn, #gameRulesBtn, #rulesBtn{ box-sizing:border-box; }
     .col-right > [aria-hidden="true"]{ display:none; }
-    #status{ order:1; flex-basis:100%; }
+    #status{ order:1; flex-basis:100%; height:auto; padding:8px 0; }
     #boardWrap{ order:2; flex-basis:100%; }
     #log-box{ order:3; flex-basis:100%; width:auto; }
     .panel:has(#capWhite), .panel:has(#capBlack){ order:4; flex-basis:calc(50% - 4px); }
@@ -772,7 +773,7 @@ function renderLog(){
 const BOARD_FRAME_PX_MAX = 480; // 4개 게임 공통 상수 (데스크톱 최대값)
 const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
 function getBoardFramePx(){
-  const available = window.innerWidth - 56; // 좌우 여백 + 랭크 라벨 폭 고려
+  const available = window.innerWidth - 40; // 좌우 여백 고려 (랭크 라벨은 보드 바깥으로 배치되어 별도 계산 불필요)
   return Math.max(180, Math.min(BOARD_FRAME_PX_MAX, available));
 }
 
@@ -794,8 +795,9 @@ function buildBoardDom(){
   const wrap = document.getElementById('boardWrap');
   const cellSize = Math.floor(getBoardFramePx() / COLS);
   const labelSize = 20;
-  wrap.style.gridTemplateColumns = `${labelSize}px repeat(${COLS}, ${cellSize}px)`;
-  wrap.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px) auto`;
+  wrap.style.position = 'relative';
+  wrap.style.gridTemplateColumns = `repeat(${COLS}, ${cellSize}px)`;
+  wrap.style.gridTemplateRows = `repeat(${ROWS}, ${cellSize}px)`;
   wrap.innerHTML = '';
 
   for(let vr=0;vr<ROWS;vr++){
@@ -803,6 +805,11 @@ function buildBoardDom(){
     const rl = document.createElement('div');
     rl.className='rowlabel';
     rl.textContent = ROWS - r;
+    rl.style.position = 'absolute';
+    rl.style.right = '100%';
+    rl.style.top = (vr*cellSize)+'px';
+    rl.style.width = labelSize+'px';
+    rl.style.height = cellSize+'px';
     wrap.appendChild(rl);
     for(let vc=0;vc<COLS;vc++){
       const c = boardFlipped ? (COLS-1-vc) : vc;
@@ -817,13 +824,16 @@ function buildBoardDom(){
       wrap.appendChild(sq);
     }
   }
-  const corner = document.createElement('div');
-  wrap.appendChild(corner);
   for(let vc=0;vc<COLS;vc++){
     const c = boardFlipped ? (COLS-1-vc) : vc;
     const cl = document.createElement('div');
     cl.className='collabel';
     cl.textContent = colLabel(c);
+    cl.style.position = 'absolute';
+    cl.style.top = '100%';
+    cl.style.left = (vc*cellSize)+'px';
+    cl.style.width = cellSize+'px';
+    cl.style.height = labelSize+'px';
     wrap.appendChild(cl);
   }
 }

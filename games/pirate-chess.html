@@ -56,13 +56,13 @@ h1 { font-size: 20px; color: var(--accent); letter-spacing: 2px; line-height:44p
 
 #rank-labels {
   display: flex; flex-direction: column;
-  height: 480px;
+  position: absolute; right: 100%; top: 0;
 }
 #rank-labels span {
   font-size: 11px; color: var(--text-dim); width: 20px; text-align: center;
   height: 48px; line-height: 48px;
 }
-#board-col { display: flex; flex-direction: column; align-items: center; }
+#board-col { display: flex; flex-direction: column; align-items: center; position: relative; }
 #board {
   display: grid;
   grid-template-columns: repeat(10, 48px);
@@ -221,7 +221,7 @@ button:hover { background: var(--btn-accent-bg); }
   .row3{ gap:8px; }
   .col-left, .mid-col, .col-right{ display:contents; }
   .col-right > [aria-hidden="true"]{ display:none; }
-  #turn-box{ order:1; flex-basis:100%; }
+  #turn-box{ order:1; flex-basis:100%; height:auto; padding:8px 0; }
   #boardWrap{ order:2; flex-basis:100%; }
   #log-box{ order:3; flex-basis:100%; width:auto; }
   .panel:has(#capWhite), .panel:has(#capBlack){ order:4; flex-basis:calc(50% - 4px); }
@@ -266,9 +266,9 @@ button:hover { background: var(--btn-accent-bg); }
   </div>
 
   <div class="mid-col">
-    <div id="boardWrap" style="display:flex;align-items:flex-start;justify-content:center;">
-      <div id="rank-labels"></div>
+    <div id="boardWrap" style="display:flex;justify-content:center;">
       <div id="board-col">
+        <div id="rank-labels"></div>
         <div id="board"></div>
         <div id="file-labels"></div>
       </div>
@@ -326,7 +326,7 @@ button:hover { background: var(--btn-accent-bg); }
 const BOARD_FRAME_PX_MAX = 480; // 4개 게임 공통 상수 (데스크톱 최대값)
 const PIECE_SIZE_RATIO = 0.6; // 4개 게임 공통 비율 (타일 크기 대비 기물 크기)
 function getBoardFramePx(){
-  const available = window.innerWidth - 56; // 좌우 여백 + 랭크 라벨 폭 고려
+  const available = window.innerWidth - 40; // 좌우 여백 고려 (랭크 라벨은 보드 바깥으로 배치되어 별도 계산 불필요)
   return Math.max(180, Math.min(BOARD_FRAME_PX_MAX, available));
 }
 const FILES = ['a','b','c','d','e','f','g','h','i','j'];
