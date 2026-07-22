@@ -75,6 +75,20 @@ body {
 
 .panel { background:var(--panel-bg); border:1px solid var(--border); border-radius:8px; padding:10px; }
 .panel h3 { font-size:12px; color:var(--text-dim); font-weight:500; margin:0 0 8px 0; }
+#status{
+  padding:0;
+  height:52px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--panel-bg);
+  box-sizing:border-box;
+  text-align:center;
+}
 #turn-display { font-size:15px; font-weight:600; color:var(--accent); text-align:center; }
 #status-msg { font-style:italic; font-size:.85rem; color:var(--text-dim); text-align:center; }
 #ai-thinking { font-size:10px; color:var(--accent); min-height:14px; text-align:center; margin-top:6px; }
@@ -156,7 +170,7 @@ button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border
   .row3{ gap:8px; }
   .col-left, .mid-col, .col-right{ display:contents; }
   .col-right > [aria-hidden="true"]{ display:none; }
-  #status{ order:1; flex-basis:100%; height:auto !important; padding:8px 0 !important; }
+  #status{ order:1; flex-basis:100%; height:auto; padding:8px 0; }
   #boardWrap{ order:2; flex-basis:100%; }
   #log-box{ order:3; flex-basis:100%; width:auto; }
   .panel:has(#blackMoves){ order:4; flex-basis:100%; }
@@ -170,7 +184,7 @@ button:hover { background:var(--btn-accent-bg); border-color:var(--accent-border
 
 <div class="row3">
   <div class="col-left">
-    <div id="status" class="panel" style="padding:0;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+    <div id="status">
       <div id="turn-display">흑 차례</div>
       <div id="status-msg"></div>
     </div>
