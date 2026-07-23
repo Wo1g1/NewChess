@@ -8,13 +8,13 @@
   * { box-sizing: border-box; }
   /* 전역 테마 토큰 (4개 게임과 동일한 값) — 심플(기본) */
   :root, html[data-theme="simple"]{
-    --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
+    --bg:#1e1e1e; --panel-bg:#2a2a2a; --panel-bg-soft:rgba(42,42,42,.8); --border:#444; --text:#eee; --text-dim:#999;
     --accent:#9ccc65; --accent-border:#8fbc5a; --btn-accent-bg:#3a4d2a;
     --font-family: -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
   }
   /* 전역 테마 토큰 — 브라운 */
   html[data-theme="brown"]{
-    --bg:#1c0e05; --panel-bg:#2a1508; --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
+    --bg:#1c0e05; --panel-bg:#2a1508; --panel-bg-soft:rgba(42,21,8,.8); --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
     --accent:#c9a84c; --accent-border:#c9a84c; --btn-accent-bg:rgba(201,168,76,.18);
     --font-family: 'Crimson Text', Georgia, serif;
   }
@@ -166,7 +166,7 @@
     line-height: 1.2;
     border: 1px solid var(--border);
     border-radius: 14px;
-    background: var(--panel-bg);
+    background: var(--panel-bg-soft);
     color: var(--text);
     cursor: pointer;
     font-family: var(--font-family);
