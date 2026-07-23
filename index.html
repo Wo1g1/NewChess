@@ -42,9 +42,21 @@
     background: rgba(0,0,0,0.75);
     z-index: 50;
   }
-  header h1 {
+  #title-btn {
+    display: inline-block;
     margin: 0 0 12px;
     font-size: 1.3rem;
+    font-weight: 700;
+    font-family: var(--font-family);
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
+  }
+  #title-btn:hover {
+    background: rgba(255,255,255,0.08);
   }
   #theme-toggle {
     position: absolute; top: 14px; right: 14px;
@@ -106,13 +118,47 @@
     min-height: 300px;
     background: var(--bg);
   }
-  #placeholder {
-    color: var(--text-dim);
-    margin-top: 40px;
-    font-size: 1rem;
+  #home-view {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 40px;
+  }
+  #homeNav {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 420px;
+  }
+  #homeNav button {
+    padding: 22px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel-bg);
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--font-family);
+  }
+  #homeNav button:hover {
+    filter: brightness(1.2);
+  }
+  #homeNav button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #1a1410;
+  }
+  #game-view {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
   }
   @media (max-width: 480px) {
-    header h1 { font-size: 1rem; }
+    #title-btn { font-size: 1rem; }
     #theme-toggle { width: 88px; height: 26px; }
     #theme-toggle button { font-size: .58rem; }
     #theme-toggle button[data-theme-btn="simple"] { padding-left: 6px; }
@@ -122,47 +168,80 @@
       padding: 6px 2px; font-size: .62rem;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    #homeNav button { padding: 18px; font-size: 1rem; }
   }
 </style>
 </head>
 <body>
 <header>
   <div id="hub-dim"></div>
-  <h1>변형 체스 4종</h1>
+  <button id="title-btn" type="button">변형 체스 4종</button>
   <div id="theme-toggle">
     <button data-theme-btn="simple">심플</button>
     <button data-theme-btn="brown">클래식</button>
     <span class="divider"></span>
   </div>
+</header>
+
+<div id="home-view">
+  <div id="homeNav">
+    <button data-src="games/support-chess.html">Synergy Chess</button>
+    <button data-src="games/pirate-chess.html">Pirate Chess</button>
+    <button data-src="games/demotion-chess.html">Demotion Chess</button>
+    <button data-src="games/stack-and-seal.html">Stack &amp; Seal</button>
+  </div>
+</div>
+
+<div id="game-view" style="display:none;">
   <nav id="gameNav">
     <button data-src="games/support-chess.html">Synergy Chess</button>
     <button data-src="games/pirate-chess.html">Pirate Chess</button>
     <button data-src="games/demotion-chess.html">Demotion Chess</button>
     <button data-src="games/stack-and-seal.html">Stack &amp; Seal</button>
   </nav>
-</header>
-
-<p id="placeholder">위에서 게임을 선택하세요.</p>
-<iframe id="gameFrame" style="display:none;"></iframe>
+  <iframe id="gameFrame"></iframe>
+</div>
 
 <script>
-const nav = document.getElementById('gameNav');
+const titleBtn = document.getElementById('title-btn');
+const homeView = document.getElementById('home-view');
+const gameView = document.getElementById('game-view');
+const homeNav = document.getElementById('homeNav');
+const gameNav = document.getElementById('gameNav');
 const frame = document.getElementById('gameFrame');
-const placeholder = document.getElementById('placeholder');
 
-function selectGame(btn) {
-  [...nav.querySelectorAll('button')].forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  frame.src = btn.dataset.src;
-  frame.style.display = 'block';
-  placeholder.style.display = 'none';
+function showHome() {
+  homeView.style.display = 'flex';
+  gameView.style.display = 'none';
 }
 
-nav.addEventListener('click', (e) => {
+function showGame() {
+  homeView.style.display = 'none';
+  gameView.style.display = 'flex';
+}
+
+function selectGame(btn) {
+  const src = btn.dataset.src;
+  [...homeNav.querySelectorAll('button'), ...gameNav.querySelectorAll('button')].forEach(b => {
+    b.classList.toggle('active', b.dataset.src === src);
+  });
+  frame.src = src;
+  showGame();
+}
+
+homeNav.addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
   selectGame(btn);
 });
+
+gameNav.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  selectGame(btn);
+});
+
+titleBtn.addEventListener('click', showHome);
 
 // ===== 전역 테마 (심플/브라운, localStorage로 허브+게임 전체 공유) =====
 const THEME_KEY = 'newchess-theme';
