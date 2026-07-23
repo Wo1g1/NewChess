@@ -260,7 +260,7 @@ function showGame() {
 
 function selectGame(btn) {
   const src = btn.dataset.src;
-  [...homeNav.querySelectorAll('button'), ...gameNav.querySelectorAll('button')].forEach(b => {
+  gameNav.querySelectorAll('button').forEach(b => {
     b.classList.toggle('active', b.dataset.src === src);
   });
   frame.src = src;
