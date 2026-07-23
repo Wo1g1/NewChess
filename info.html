@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>About</title>
+<style>
+  :root, html[data-theme="simple"]{
+    --bg:#1e1e1e; --panel-bg:#2a2a2a; --border:#444; --text:#eee; --text-dim:#999;
+    --accent:#9ccc65;
+    --font-family: -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  }
+  html[data-theme="brown"]{
+    --bg:#1c0e05; --panel-bg:#2a1508; --border:#3a2010; --text:#e8d5b0; --text-dim:#a08060;
+    --accent:#c9a84c;
+    --font-family: 'Crimson Text', Georgia, serif;
+  }
+  html{ overflow:hidden; }
+  * { box-sizing:border-box; }
+  body{
+    margin:0;
+    padding:24px 20px 32px;
+    font-family:var(--font-family);
+    background:var(--bg);
+    color:var(--text);
+    overflow:hidden;
+  }
+  .wrap{ max-width:640px; margin:0 auto; }
+  h1{ font-size:1.3rem; margin:0 0 20px; text-align:center; }
+  section{ margin-bottom:28px; }
+  section h2{ font-size:1rem; color:var(--accent); margin:0 0 10px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+  section h3{ font-size:.9rem; margin:14px 0 6px; color:var(--text); }
+  section p{ font-size:.85rem; color:var(--text-dim); line-height:1.7; margin:0; min-height:1.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>About</h1>
+
+  <section>
+    <h2>세계관 소개</h2>
+    <p></p>
+  </section>
+
+  <section>
+    <h2>게임과 세계관의 연결</h2>
+    <p></p>
+  </section>
+
+  <section>
+    <h2>게임별 설명</h2>
+    <h3>Synergy Chess</h3>
+    <p></p>
+    <h3>Pirate Chess</h3>
+    <p></p>
+    <h3>Demotion Chess</h3>
+    <p></p>
+    <h3>Stack &amp; Seal</h3>
+    <p></p>
+  </section>
+</div>
+
+<script>
+function reportHeight(){
+  try{ window.parent.postMessage({type:'newchess-height', height: document.documentElement.scrollHeight}, '*'); }catch(e){}
+}
+new ResizeObserver(reportHeight).observe(document.body);
+window.addEventListener('load', reportHeight);
+reportHeight();
+
+const THEME_KEY = 'newchess-theme';
+function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); }
+applyTheme(localStorage.getItem(THEME_KEY) || 'simple');
+window.addEventListener('storage', (e) => {
+  if (e.key === THEME_KEY) applyTheme(e.newValue || 'simple');
+});
+</script>
+</body>
+</html>
