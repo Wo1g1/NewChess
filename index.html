@@ -59,7 +59,7 @@
   #title-btn {
     display: inline-block;
     margin: 0 0 12px;
-    font-size: 1.15rem;
+    font-size: 1.22rem;
     font-weight: 700;
     font-family: var(--font-family);
     background: none;
@@ -144,7 +144,7 @@
     position: relative;
     display: flex;
     justify-content: center;
-    padding: 24px 16px 40px;
+    padding: 38px 16px 40px;
   }
   #home-watermark {
     position: absolute;
@@ -202,7 +202,7 @@
     width: 100%;
     max-width: 900px;
     margin-top: auto;
-    padding: 20px 20px 28px;
+    padding: 12px 20px 16px;
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
@@ -214,10 +214,10 @@
   .footer-col {
     flex: 1;
     min-width: 160px;
-    text-align: center;
+    text-align: left;
   }
   .footer-col h4 {
-    margin: 0 0 8px;
+    margin: 0 0 4px;
     font-size: .7rem;
     text-transform: uppercase;
     letter-spacing: .06em;
@@ -225,8 +225,8 @@
     font-weight: 700;
   }
   .footer-col div {
-    margin-bottom: 4px;
-    line-height: 1.6;
+    margin-bottom: 1px;
+    line-height: 1.35;
   }
   .footer-col a {
     color: var(--accent);
@@ -235,18 +235,17 @@
   .footer-links {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    align-items: flex-start;
+    gap: 4px;
   }
   .footer-link-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     width: fit-content;
-    margin: 0 auto;
     border: 1px solid var(--border);
     border-radius: 7px;
-    padding: 5px 11px;
+    padding: 3px 9px;
     background: var(--panel-bg);
     color: var(--text);
     font-weight: 600;
@@ -258,7 +257,7 @@
     fill: currentColor;
   }
   @media (max-width: 480px) {
-    #title-btn { font-size: .85rem; }
+    #title-btn { font-size: .92rem; }
     #theme-toggle { width: 88px; height: 26px; }
     #theme-toggle button { font-size: .58rem; }
     #theme-toggle button[data-theme-btn="simple"] { padding-left: 6px; }
@@ -270,12 +269,13 @@
     }
     #homeNav button { padding: 14px; font-size: .85rem; }
     #corner-badge { width: 22px; height: 22px; top: 11px; left: 10px; }
-    #site-footer { padding: 14px 6px 18px; gap: 4px; font-size: .58rem; }
+    #game-view { margin-bottom: 40px; }
+    #site-footer { padding: 10px 6px 12px; gap: 4px; font-size: .58rem; }
     .footer-col { min-width: 0; }
-    .footer-col h4 { font-size: .54rem; margin-bottom: 5px; }
-    .footer-col div { margin-bottom: 2px; line-height: 1.4; }
-    .footer-links { gap: 4px; }
-    .footer-link-btn { font-size: .54rem; padding: 3px 6px; gap: 3px; }
+    .footer-col h4 { font-size: .54rem; margin-bottom: 3px; }
+    .footer-col div { margin-bottom: 0; line-height: 1.3; }
+    .footer-links { gap: 3px; }
+    .footer-link-btn { font-size: .54rem; padding: 2px 5px; gap: 3px; }
     .footer-link-btn svg { width: 10px; height: 10px; }
   }
 </style>
