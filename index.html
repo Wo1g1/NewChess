@@ -219,8 +219,8 @@
     min-width: 160px;
     text-align: left;
   }
-  .footer-license {
-    flex: 2 1 0;
+  .footer-info-inner {
+    padding-left: 50%;
   }
   .footer-col h4 {
     margin: 0 0 4px;
@@ -230,22 +230,16 @@
     color: var(--text-dim);
     font-weight: 700;
   }
-  .footer-heading-btn {
+  .footer-text-btn {
     display: inline;
     background: none;
     border: none;
     padding: 0;
     margin: 0;
     font: inherit;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    color: inherit;
+    color: var(--accent);
     cursor: pointer;
-  }
-  @media (hover: hover) {
-    .footer-heading-btn:hover {
-      color: var(--accent);
-    }
+    text-decoration: none;
   }
   .footer-col div {
     margin-bottom: 1px;
@@ -347,7 +341,10 @@
     <div><a href="https://creativecommons.org/licenses/by-nd/3.0/" target="_blank" rel="noopener">CC BY-ND 3.0</a></div>
   </div>
   <div class="footer-col footer-info">
-    <h4><button id="infoBtn" type="button" class="footer-heading-btn">Info</button></h4>
+    <div class="footer-info-inner">
+      <h4>Info</h4>
+      <div><button id="infoBtn" type="button" class="footer-text-btn">About</button></div>
+    </div>
   </div>
   <div class="footer-col footer-links">
     <h4>Links</h4>
