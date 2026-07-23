@@ -53,10 +53,13 @@
   #corner-badge svg {
     width: 100%; height: 100%; display: block;
   }
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
   #title-btn {
     display: inline-block;
     margin: 0 0 12px;
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     font-weight: 700;
     font-family: var(--font-family);
     background: none;
@@ -66,8 +69,13 @@
     padding: 4px 10px;
     border-radius: 8px;
   }
-  #title-btn:hover {
-    background: rgba(255,255,255,0.08);
+  #title-btn:focus {
+    outline: none;
+  }
+  @media (hover: hover) {
+    #title-btn:hover {
+      background: rgba(255,255,255,0.08);
+    }
   }
   #theme-toggle {
     position: absolute; top: 14px; right: 14px;
@@ -106,7 +114,7 @@
   }
   nav button {
     padding: 10px 18px;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     line-height: 1.2;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -115,8 +123,10 @@
     cursor: pointer;
     font-family: var(--font-family);
   }
-  nav button:hover {
-    filter: brightness(1.2);
+  @media (hover: hover) {
+    nav button:hover {
+      filter: brightness(1.2);
+    }
   }
   nav button.active {
     background: var(--accent);
@@ -161,8 +171,8 @@
     max-width: 420px;
   }
   #homeNav button {
-    padding: 22px;
-    font-size: 1.15rem;
+    padding: 20px;
+    font-size: 1rem;
     font-weight: 600;
     line-height: 1.2;
     border: 1px solid var(--border);
@@ -172,8 +182,10 @@
     cursor: pointer;
     font-family: var(--font-family);
   }
-  #homeNav button:hover {
-    filter: brightness(1.2);
+  @media (hover: hover) {
+    #homeNav button:hover {
+      filter: brightness(1.2);
+    }
   }
   #homeNav button.active {
     background: var(--accent);
@@ -246,7 +258,7 @@
     fill: currentColor;
   }
   @media (max-width: 480px) {
-    #title-btn { font-size: 1rem; }
+    #title-btn { font-size: .85rem; }
     #theme-toggle { width: 88px; height: 26px; }
     #theme-toggle button { font-size: .58rem; }
     #theme-toggle button[data-theme-btn="simple"] { padding-left: 6px; }
@@ -256,8 +268,15 @@
       padding: 6px 2px; font-size: .62rem;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    #homeNav button { padding: 18px; font-size: 1rem; }
+    #homeNav button { padding: 14px; font-size: .85rem; }
     #corner-badge { width: 22px; height: 22px; top: 11px; left: 10px; }
+    #site-footer { padding: 14px 6px 18px; gap: 4px; font-size: .58rem; }
+    .footer-col { min-width: 0; }
+    .footer-col h4 { font-size: .54rem; margin-bottom: 5px; }
+    .footer-col div { margin-bottom: 2px; line-height: 1.4; }
+    .footer-links { gap: 4px; }
+    .footer-link-btn { font-size: .54rem; padding: 3px 6px; gap: 3px; }
+    .footer-link-btn svg { width: 10px; height: 10px; }
   }
 </style>
 </head>
@@ -341,13 +360,19 @@ function showGame() {
   cornerBadge.style.display = 'block';
 }
 
+let currentSrc = null;
+
 function selectGame(btn) {
   const src = btn.dataset.src;
   gameNav.querySelectorAll('button').forEach(b => {
     b.classList.toggle('active', b.dataset.src === src);
   });
-  frame.src = src;
+  if (src !== currentSrc) {
+    currentSrc = src;
+    frame.src = src;
+  }
   showGame();
+  btn.blur();
 }
 
 homeNav.addEventListener('click', (e) => {
@@ -362,7 +387,10 @@ gameNav.addEventListener('click', (e) => {
   selectGame(btn);
 });
 
-titleBtn.addEventListener('click', showHome);
+titleBtn.addEventListener('click', () => {
+  showHome();
+  titleBtn.blur();
+});
 
 // ===== 전역 테마 (심플/브라운, localStorage로 허브+게임 전체 공유) =====
 const THEME_KEY = 'newchess-theme';
