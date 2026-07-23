@@ -38,7 +38,7 @@
   }
   #hub-dim {
     display: none;
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.75);
     z-index: 50;
@@ -139,6 +139,8 @@
     border: none;
     min-height: 300px;
     background: var(--bg);
+    position: relative;
+    z-index: 60;
   }
   #home-view {
     width: 100%;
@@ -209,7 +211,7 @@
     justify-content: space-between;
     gap: 20px;
     flex-wrap: wrap;
-    font-size: .78rem;
+    font-size: .68rem;
     color: var(--text-dim);
   }
   .footer-col {
@@ -219,7 +221,7 @@
   }
   .footer-col h4 {
     margin: 0 0 4px;
-    font-size: .7rem;
+    font-size: .6rem;
     text-transform: uppercase;
     letter-spacing: .06em;
     color: var(--text-dim);
@@ -250,11 +252,11 @@
     background: var(--panel-bg);
     color: var(--text);
     font-weight: 600;
-    font-size: .76rem;
+    font-size: .66rem;
     text-decoration: none;
   }
   .footer-link-btn svg {
-    width: 14px; height: 14px;
+    width: 12px; height: 12px;
     fill: currentColor;
   }
   @media (max-width: 480px) {
@@ -271,19 +273,19 @@
     #homeNav button { padding: 14px; font-size: .85rem; }
     #corner-badge { width: 22px; height: 22px; top: 11px; left: 10px; }
     #game-view { margin-bottom: 40px; }
-    #site-footer { padding: 10px 6px 12px; gap: 4px; font-size: .58rem; }
+    #site-footer { padding: 10px 6px 12px; gap: 4px; font-size: .48rem; }
     .footer-col { min-width: 0; }
-    .footer-col h4 { font-size: .54rem; margin-bottom: 3px; }
+    .footer-col h4 { font-size: .44rem; margin-bottom: 3px; }
     .footer-col div { margin-bottom: 0; line-height: 1.3; }
     .footer-links { gap: 3px; }
-    .footer-link-btn { font-size: .54rem; padding: 2px 5px; gap: 3px; }
-    .footer-link-btn svg { width: 10px; height: 10px; }
+    .footer-link-btn { font-size: .44rem; padding: 2px 5px; gap: 3px; }
+    .footer-link-btn svg { width: 9px; height: 9px; }
   }
 </style>
 </head>
 <body>
+<div id="hub-dim"></div>
 <header>
-  <div id="hub-dim"></div>
   <div id="corner-badge">
     <svg viewBox="0 0 140.80191 141.66515" fill="currentColor"><g transform="translate(-116.19234,-84.833324)"><g transform="matrix(0.8237663,0,0,0.82890338,14.984505,23.661332)"><g transform="matrix(0.93225343,0,0,0.94271695,5.7602422,7.9949392)"><g transform="matrix(5.3183218,0,0,5.2942393,-406.14999,-676.3914)"><path d="m 119.99519,143.36164 v 3.0176 c 4.27231,1.0236 7.63178,4.28308 8.74817,8.44771 h 3.02997 c -1.23092,-5.78439 -5.89891,-10.33159 -11.77814,-11.46531 z m -5.94688,0.041 c -5.78225,1.19884 -10.35522,5.70737 -11.57148,11.42437 h 3.03203 c 1.09831,-4.09735 4.36555,-7.31911 8.53945,-8.39653 z m -11.6136,17.29365 c 1.14894,5.81464 5.76198,10.41739 11.6136,11.63062 v -3.02784 c -4.24376,-1.09545 -7.55041,-4.40741 -8.59285,-8.60278 z m 26.35987,0 c -1.05953,4.26273 -4.45701,7.61358 -8.79939,8.65396 v 3.01773 c 5.94901,-1.14718 10.65806,-5.78921 11.82066,-11.67169 z"/><path d="m 118.59434,174.93017 h -2.93812 v -33.84069 h 2.93812 z"/><path d="m 100.13319,159.31511 v -2.90063 h 34.27799 v 2.90063 z"/></g></g></g></g></svg>
   </div>
