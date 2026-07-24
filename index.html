@@ -395,6 +395,7 @@ function selectGame(btn) {
     currentSrc = src;
     frame.src = src;
   }
+  gameNav.style.display = '';
   showGame();
   btn.blur();
 }
@@ -405,6 +406,7 @@ function showInfo() {
     currentSrc = 'info.html';
     frame.src = 'info.html';
   }
+  gameNav.style.display = 'none';
   showGame();
   infoBtn.blur();
 }
