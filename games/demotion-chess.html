@@ -147,6 +147,7 @@
   /* 실제 보드 색과 동일한 체커 — 테마와 무관하게 고정 */
   .mc.chk-l{ background:var(--light); }
   .mc.chk-d{ background:var(--dark); }
+  .mc.piece-cell.demoted{ transform:scaleY(-1); }
   .mc.piece-cell{ background:#9a8010 !important; }
   .mc.enemy{ background:#5a1010 !important; color:#e8d5b0; }
   /* 이동/캡처 표기 — 색은 테마와 무관하게 고정: 이동=파랑, 캡처=빨강, 이동+캡처=보라 */
@@ -956,6 +957,7 @@ function buildPieceModalData(){
         },
         {
           label: '강급 후 (와지르)',
+          demoted: true,
           grid: (() => {
             const g = makeGrid(7); g[3][3]='piece-cell';
             for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) g[3+dr][3+dc]='mv-cap';
@@ -985,6 +987,7 @@ function buildPieceModalData(){
         },
         {
           label: '강급 후 (만)',
+          demoted: true,
           grid: (() => {
             const g = makeGrid(7); g[3][3]='piece-cell';
             for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) if(dr||dc) g[3+dr][3+dc]='mv-cap';
@@ -1103,6 +1106,7 @@ function renderPieceContent(key){
         const sp = grid[r][c];
         if(sp==='piece-cell'){
           cell.classList.add('piece-cell');
+          if(b.demoted) cell.classList.add('demoted');
           cell.textContent = data.icon;
         } else if(sp==='enemy'){
           cell.classList.add('enemy');
