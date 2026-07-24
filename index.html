@@ -412,14 +412,14 @@ function showInfo() {
 const infoBtn = document.getElementById('infoBtn');
 infoBtn.addEventListener('click', showInfo);
 
-// 홈 화면 배경 로고(워터마크)의 하단 세로 막대 오른쪽 꼭짓점에 Info 칸을 맞춤.
+// 홈 화면 배경 로고(워터마크)의 하단 세로 막대 왼쪽 꼭짓점에 Info 칸을 맞춤.
 // 로고는 width:min(70%,340px)로 반응형이라, 막대 폭도 그 비율을 그대로 따라가게 계산.
 const footerInfo = document.querySelector('.footer-info');
 const LOGO_BAR_WIDTH_RATIO = 28.97637939453125 / 340; // 실제 렌더링된 막대 폭을 340px 기준으로 측정한 비율
 function updateInfoPosition() {
   const iconWidth = Math.min(document.documentElement.clientWidth * 0.7, 340);
   const barHalfWidth = (iconWidth * LOGO_BAR_WIDTH_RATIO) / 2;
-  footerInfo.style.left = `calc(50% + ${barHalfWidth}px)`;
+  footerInfo.style.left = `calc(50% - ${barHalfWidth}px)`;
 }
 updateInfoPosition();
 window.addEventListener('resize', updateInfoPosition);
