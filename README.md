@@ -14,7 +14,6 @@
   - **Stack & Seal** (`stack-and-seal.html`) — 현실 보드게임에 대응되지 않는, 이셰노이 비나만의 독창적인 게임.
 - `info.html` — 세계관 소개 및 게임별 설명을 담은 About 페이지. 허브 하단 "Info → About"으로 접근.
 - `assets/` — 로고 SVG 등 정적 리소스.
-- `docs/CHESS_VARIANTS_GUIDE` — 프로젝트 초기 설계 문서(2026-07-19 작성). 4개 게임에 공용 AI 엔진(negamax + 알파베타)을 이식하기 위해 최초로 작성한 작업 지시서로, 지금은 참고용 기록으로만 남아있다.
 
 ## 기술 노트
 
@@ -25,7 +24,3 @@
 ## 라이선스
 
 © 2022–2026 월기. [CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/)으로 배포됩니다. 자세한 내용과 세계관 설명은 사이트 내 [About 페이지](https://wo1g1.github.io/NewChess/info.html)를 참고하세요.
-
-## 배포
-
-`main` 브랜치에 push되면 GitHub Actions가 자동으로 GitHub Pages에 배포한다.
