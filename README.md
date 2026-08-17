@@ -24,3 +24,5 @@
 ## 라이선스
 
 © 2022–2026 월기. [CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/)으로 배포됩니다. 자세한 내용과 세계관 설명은 사이트 내 [About 페이지](https://wo1g1.github.io/NewChess/info.html)를 참고하세요.
+
+허브 타이틀에 사용된 커스텀 폰트(`assets/BlackLabern.woff2`)는 Antonio J. Morata(elmoyenique)의 [zilverstone eYe/FS](https://fontstruct.com/fontstructions/show/485705/zilverstone_eye_fs)를 기반으로 재창작한 것으로, 원본과 동일하게 [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) 라이선스를 따릅니다. 사이트 본문 콘텐츠에 적용되는 CC BY-ND 3.0과는 별개입니다.
