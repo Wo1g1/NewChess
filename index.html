@@ -66,9 +66,11 @@
   #title-btn {
     display: inline-block;
     margin: 0 0 12px;
-    font-size: 0.85rem;
+    font-size: 0.55rem;
     font-weight: 700;
     font-family: 'BlackLabern', var(--font-family);
+    white-space: nowrap;
+    line-height: 1.6;
     background: none;
     border: none;
     color: var(--text);
@@ -286,7 +288,7 @@
     fill: currentColor;
   }
   @media (max-width: 480px) {
-    #title-btn { font-size: .65rem; }
+    #title-btn { font-size: .42rem; white-space: normal; max-width: 62%; }
     #theme-toggle { width: 88px; height: 26px; }
     #theme-toggle button { font-size: .58rem; }
     #theme-toggle button[data-theme-btn="simple"] { padding-left: 6px; }
