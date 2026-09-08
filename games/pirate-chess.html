@@ -294,7 +294,7 @@ button:hover { background: var(--btn-accent-bg); }
       <div class="rule-label">승리 조건</div>
       <ul>
         <li>체크메이트</li>
-        <li>선장이 육지에서 2턴 연속 체크 없이 생존</li>
+        <li>선장이 육지에서 3턴 연속 체크 없이 생존</li>
       </ul>
     </div>
     <div class="rule-section">
@@ -595,7 +595,7 @@ const PIECE_MODAL_DATA = {
             if(dr||dc) g[3+dr][3+dc]='mv-cap';
           return g;
         })(),
-        desc:'8방향 1칸 이동. 체크메이트 또는 육지 2턴 생존 시 승리.',
+        desc:'8방향 1칸 이동. 체크메이트 또는 육지 3턴 생존 시 승리.',
         legends:[['mv-cap','#7a5500','이동/캡처']]
       }
     ]
